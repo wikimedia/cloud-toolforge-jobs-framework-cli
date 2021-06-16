@@ -145,9 +145,7 @@ def parse_args():
     runparser.add_argument(
         "--image", required=True, help="image shortname (check them with `containers`)"
     )
-    runparser.add_argument(
-        "--schedule", required=False, help="run a job with a cron-like schedule"
-    )
+    runparser.add_argument("--schedule", required=False, help="run a job with a cron-like schedule")
     runparser.add_argument(
         "--continuous", required=False, action="store_true", help="run a continuous job"
     )
@@ -273,7 +271,7 @@ def op_run(conf: Conf, name, command, schedule, continuous, image):
         sys.exit(1)
 
     if response.status_code == 409:
-        logging.error(f"a job with the same name exists already")
+        logging.error(f"a job with the same name '{name}' exists already")
         sys.exit(1)
 
     if response.status_code >= 300:
@@ -314,7 +312,7 @@ def op_show(conf: Conf, name):
 
 def op_delete(conf: Conf, name):
     try:
-        response = conf.session.delete(conf.api_url + f"/delete/{name}")
+        conf.session.delete(conf.api_url + f"/delete/{name}")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -324,7 +322,7 @@ def op_delete(conf: Conf, name):
 
 def op_flush(conf: Conf):
     try:
-        response = conf.session.delete(conf.api_url + f"/flush/")
+        conf.session.delete(conf.api_url + "/flush/")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)

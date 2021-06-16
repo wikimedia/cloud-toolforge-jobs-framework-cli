@@ -57,14 +57,27 @@ class Conf:
             logging.error(f"couldn't read kubeconfig file '{self.kubeconfigfile}': {e}")
             sys.exit(1)
 
-        self.context = self._find_cfg_obj("contexts", self.k8sconf["current-context"])
-        self.cluster = self._find_cfg_obj("clusters", self.context["cluster"])
-        self.server = self.cluster["server"]
-        self.namespace = self.context["namespace"]
+        logging.debug(f"loaded kubeconfig file '{self.kubeconfigfile}'")
 
-        self.user = self._find_cfg_obj("users", self.context["user"])
         self.session = requests.Session()
-        self.session.cert = (self.user["client-certificate"], self.user["client-key"])
+        try:
+            self.context = self._find_cfg_obj("contexts", self.k8sconf["current-context"])
+            self.cluster = self._find_cfg_obj("clusters", self.context["cluster"])
+            self.server = self.cluster["server"]
+            self.namespace = self.context["namespace"]
+            self.user = self._find_cfg_obj("users", self.context["user"])
+            self.session.cert = (self.user["client-certificate"], self.user["client-key"])
+        except KeyError as e:
+            logging.error(
+                "couldn't build session configuration from file "
+                f"'{self.kubeconfigfile}': missing key {e}"
+            )
+            sys.exit(1)
+        except Exception as e:
+            logging.error(
+                "couldn't build session configuration from file " f"'{self.kubeconfigfile}': {e}"
+            )
+            sys.exit(1)
 
         if customhdr is not None:
             self.session.headers.update(customhdr)
@@ -145,7 +158,11 @@ def parse_args():
     runparser.add_argument(
         "--image", required=True, help="image shortname (check them with `containers`)"
     )
-    runparser.add_argument("--schedule", required=False, help="run a job with a cron-like schedule")
+    runparser.add_argument(
+        "--schedule",
+        required=False,
+        help="run a job with a cron-like schedule (example '1 * * * *')",
+    )
     runparser.add_argument(
         "--continuous", required=False, action="store_true", help="run a continuous job"
     )

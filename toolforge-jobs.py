@@ -14,6 +14,7 @@
 #
 
 from tabulate import tabulate
+import textwrap
 import requests
 import argparse
 import urllib3
@@ -34,11 +35,12 @@ class Conf:
     """
 
     JOB_TABULATION_HEADERS = {
-        "name": "Job id",
-        "cmd": "Job command",
-        "type": "Job type",
-        "image": "image shortname",
-        "status": "Job status",
+        "name": "Job name:",
+        "cmd": "Command:",
+        "type": "Job type:",
+        "image": "Container:",
+        "status_short": "Status:",
+        "status_long": "Hints:",
     }
 
     CONTAINER_TABULATION_HEADERS = {
@@ -218,7 +220,7 @@ def op_containers(conf: Conf):
     print(output)
 
 
-def job_prepare_for_output(job):
+def job_prepare_for_output(conf: Conf, job, supress_hints=True):
     schedule = job.get("schedule", None)
     cont = job.get("continuous", None)
     if schedule is not None:
@@ -235,6 +237,21 @@ def job_prepare_for_output(job):
         job.pop("user", None)
     if job.get("namespace", None) is not None:
         job.pop("namespace", None)
+
+    if supress_hints:
+        if job.get("status_long", None) is not None:
+            job.pop("status_long", None)
+    else:
+        job["status_long"] = textwrap.fill(job.get("status_long", "Unknown"))
+
+    # normalize key names for easier printing
+    for key in conf.JOB_TABULATION_HEADERS:
+        if key == "status_long" and supress_hints:
+            continue
+
+        oldkey = key
+        newkey = conf.JOB_TABULATION_HEADERS[key]
+        job[newkey] = job.pop(oldkey, "Unknown")
 
 
 def op_list(conf: Conf):
@@ -258,12 +275,12 @@ def op_list(conf: Conf):
         logging.debug("no jobs to be listed")
         return
 
-    for job in list:
-        logging.debug(f"job information from the API: {job}")
-        job_prepare_for_output(job)
-
     try:
-        output = tabulate(list, headers=conf.JOB_TABULATION_HEADERS)
+        for job in list:
+            logging.debug(f"job information from the API: {job}")
+            job_prepare_for_output(conf, job, supress_hints=True)
+
+        output = tabulate(list, headers=conf.JOB_TABULATION_HEADERS, tablefmt="pretty")
     except Exception as e:
         logging.error(f"couldn't format information from the API. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -316,10 +333,16 @@ def op_show(conf: Conf, name):
         sys.exit(1)
 
     logging.debug(f"job information from the API: {job}")
-    job_prepare_for_output(job)
+
+    job_prepare_for_output(conf, job, supress_hints=False)
+
+    # change table direction
+    kvlist = []
+    for key in job:
+        kvlist.append([key, job[key]])
 
     try:
-        output = tabulate([job], headers=conf.JOB_TABULATION_HEADERS)
+        output = tabulate(kvlist, tablefmt="grid")
     except Exception as e:
         logging.error(f"couldn't format information from the API. Contact a Toolforge admin: {e}")
         sys.exit(1)

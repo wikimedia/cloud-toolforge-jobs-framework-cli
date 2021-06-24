@@ -19,6 +19,7 @@ import requests
 import argparse
 import urllib3
 import logging
+import time
 import json
 import yaml
 import sys
@@ -160,13 +161,17 @@ def parse_args():
     runparser.add_argument(
         "--image", required=True, help="image shortname (check them with `containers`)"
     )
-    runparser.add_argument(
+    runparser_exclusive_group = runparser.add_mutually_exclusive_group()
+    runparser_exclusive_group.add_argument(
         "--schedule",
         required=False,
         help="run a job with a cron-like schedule (example '1 * * * *')",
     )
-    runparser.add_argument(
+    runparser_exclusive_group.add_argument(
         "--continuous", required=False, action="store_true", help="run a continuous job"
+    )
+    runparser_exclusive_group.add_argument(
+        "--wait", required=False, action="store_true", help="run a job and wait for completition"
     )
 
     showparser = subparser.add_parser(
@@ -288,7 +293,16 @@ def op_list(conf: Conf):
     print(output)
 
 
-def op_run(conf: Conf, name, command, schedule, continuous, image):
+def _wait_for_job(conf: Conf, name: str):
+    while True:
+        time.sleep(2)
+        job = _show_job(conf, name)
+        if job["status_short"] == "Completed":
+            logging.info("job completed")
+            return
+
+
+def op_run(conf: Conf, name, command, schedule, continuous, image, wait):
     payload = {"name": name, "imagename": image, "cmd": command}
 
     if continuous:
@@ -314,8 +328,11 @@ def op_run(conf: Conf, name, command, schedule, continuous, image):
 
     logging.debug("job was created")
 
+    if wait:
+        _wait_for_job(conf, name)
 
-def op_show(conf: Conf, name):
+
+def _show_job(conf: Conf, name):
     try:
         response = conf.session.get(conf.api_url + f"/show/{name}")
     except Exception as e:
@@ -333,7 +350,11 @@ def op_show(conf: Conf, name):
         sys.exit(1)
 
     logging.debug(f"job information from the API: {job}")
+    return job
 
+
+def op_show(conf: Conf, name):
+    job = _show_job(conf, name)
     job_prepare_for_output(conf, job, supress_hints=False)
 
     # change table direction
@@ -392,7 +413,7 @@ def main():
     if args.operation == "containers":
         op_containers(conf)
     elif args.operation == "run":
-        op_run(conf, args.name, args.command, args.schedule, args.continuous, args.image)
+        op_run(conf, args.name, args.command, args.schedule, args.continuous, args.image, args.wait)
     elif args.operation == "show":
         op_show(conf, args.name)
     elif args.operation == "delete":

@@ -49,7 +49,7 @@ class Conf:
         "image": "Docker container image",
     }
 
-    def __init__(self, kubeconfig, customurl, customhdr):
+    def __init__(self, kubeconfig, customurl, customhdr, customfqdn, customaddr):
         """Constructor"""
         self.kubeconfigfile = os.path.expanduser(kubeconfig)
 
@@ -87,6 +87,11 @@ class Conf:
 
         # don't verify server-side TLS for now
         self.session.verify = False
+
+        if customaddr is not None and customfqdn is not None:
+            from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
+
+            self.session.mount(f"https://{customfqdn}", ForcedIPHTTPSAdapter(dest_ip=customaddr))
 
         if customurl is not None:
             self.api_url = customurl
@@ -131,6 +136,16 @@ def parse_args():
     parser.add_argument(
         "--url",
         help="use custom URL for the Toolforge jobs framework API endpoint. "
+        "Only useful for Toolforge admins.",
+    )
+    parser.add_argument(
+        "--fqdn",
+        help="use custom FQDN for the Toolforge jobs framework API endpoint. "
+        "Only useful for Toolforge admins.",
+    )
+    parser.add_argument(
+        "--addr",
+        help="use custom IP address for the Toolforge jobs framework API endpoint. "
         "Only useful for Toolforge admins.",
     )
     parser.add_argument(
@@ -407,7 +422,7 @@ def main():
     )
     logging.basicConfig(format=logging_format, level=logging_level, stream=sys.stdout)
 
-    conf = Conf(args.kubeconfig, args.url, args.hdr)
+    conf = Conf(args.kubeconfig, args.url, args.hdr, args.fqdn, args.addr)
     logging.debug("session configuration generated correctly")
 
     if args.operation == "containers":

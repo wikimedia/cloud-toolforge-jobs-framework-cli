@@ -217,7 +217,7 @@ def op_containers(conf: Conf):
         sys.exit(1)
 
     try:
-        output = tabulate(containers, headers=conf.CONTAINER_TABULATION_HEADERS)
+        output = tabulate(containers, headers=conf.CONTAINER_TABULATION_HEADERS, tablefmt="pretty")
     except Exception as e:
         logging.error(f"couldn't format information from the API. Contact a Toolforge admin: {e}")
         sys.exit(1)

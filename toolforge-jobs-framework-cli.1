@@ -1,0 +1,172 @@
+.\" (C) Copyright 2021 Arturo Borrero Gonzalez <aborrero@wikimedia.org>
+.\"
+.TH TOOLFORGE-JOBS-FRAMEWORK 1 "June 29 2021"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+toolforge-jobs-framework-cli \- command line interface for the Toolforge Jobs Framework
+.SH SYNOPSIS
+.B toolforge-jobs [options] {containers,run,show,list,delete,flush} ...
+.SH DESCRIPTION
+The \fBtoolforge-jobs\fP command line interface allows you to interact with the the \fBToolforge
+Jobs Framework\fP.
+
+This framework allows you to manage jobs that run in the \fBWikimedia Toolforge\fP platform.
+
+In general there are 3 kind of jobs:
+.TP
+.B normal
+Jobs that are initiated by the user, and are expected to run until the job's internal execution
+normally finishes.
+.TP
+.B schedule
+Jobs that once created by the user, are periodically launched at a given time by the framework.
+Similar to a cronjob.
+.TP
+.B continuous
+Jobs that once created by the user are expected to be always up and running (for example, a daemon).
+
+.SH ACTIONS
+Top level actions that the command supports:
+
+.TP
+.B containers
+List information on available container types for the \fBToolforge Jobs Framework\fP. To be used in
+the \fBrun\fP command \fB--image\fP parameter.
+
+Example:
+
+.nf
+$ toolforge-jobs containers
+Short name     Docker container image
+-------------  ----------------------------------------------------------------------
+tf-buster-std  docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest
+tf-golang111   docker-registry.tools.wmflabs.org/toolforge-golang111-sssd-base:latest
+tf-jdk11       docker-registry.tools.wmflabs.org/toolforge-jdk11-sssd-base:latest
+tf-node10      docker-registry.tools.wmflabs.org/toolforge-node10-sssd-base:latest
+tf-php73       docker-registry.tools.wmflabs.org/toolforge-php73-sssd-base:latest
+tf-python37    docker-registry.tools.wmflabs.org/toolforge-python37-sssd-base:latest
+tf-ruby25      docker-registry.tools.wmflabs.org/toolforge-ruby25-sssd-base:latest
+tf-tcl86       docker-registry.tools.wmflabs.org/toolforge-tcl86-sssd-base:latest
+wm-buster      docker-registry.tools.wmflabs.org/wikimedia-buster:latest
+wm-stretch     docker-registry.tools.wmflabs.org/wikimedia-stretch:latest
+.fi
+
+.TP
+.B run NAME --command COMMAND --image IMAGE [--schedule SCHEDULE | --continuous | --wait]
+Run a new job of your own in Toolforge. Action specific parameters:
+
+.nf
+NAME                    New job name, unique identifier. Example: "myjob"
+--command COMMAND       The command to run in the job. Example: "./mycommand.sh"
+--image IMAGE           Container image shortname. Check them with the \fBcontainers\fP action. Example: "tf-buster-std".
+
+--schedule SCHEDULE     If the job is a schedule, cron time specification. Example: "1 * * * *".
+--continuous            Run a continuous job.
+--wait                  Run a normal job and wait for completition.
+.fi
+
+Some complete examples:
+
+.nf
+Running a normal job:
+$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-buster-sd
+
+Running a normal job and waiting for it to complete:
+$ toolforge-jobs run myotherjob --command ./myothercommand.sh --image tf-buster-sd --wait
+
+Running a continuous job:
+$ toolforge-jobs run myalwaysrunningjob --command ./myendlesscommand.sh --image tf-buster-sd --continuous
+
+Running a scheduled job:
+$ toolforge-jobs run mycronjob --command ./everyminute.sh --image tf-buster-sd --schedule "1 * * * *"
+.fi
+
+.TP
+.B show NAME
+Show details of a job of your own in Toolforge.
+
+Example:
+
+.nf
+$ toolforge-jobs show myscheduledjob
++------------+-----------------------------------------------------------------+
+| Job name:  | myscheduledjob                                                  |
++------------+-----------------------------------------------------------------+
+| Command:   | ./read-dumps.sh                                                 |
++------------+-----------------------------------------------------------------+
+| Job type:  | schedule: * * * * *                                             |
++------------+-----------------------------------------------------------------+
+| Container: | tf-buster-std                                                   |
++------------+-----------------------------------------------------------------+
+| Status:    | Last schedule time: 2021-06-30T10:26:00Z                        |
++------------+-----------------------------------------------------------------+
+| Hints:     | Last run at 2021-06-30T10:26:08Z. Pod in 'Pending' phase. State |
+|            | 'waiting' for reason 'ContainerCreating'.                       |
++------------+-----------------------------------------------------------------+
+.fi
+
+.TP
+.B list
+List all running jobs of your own in Toolforge.
+
+Example:
+
+.nf
+$ toolforge-jobs list
+Job name:       Command:                 Job type:            Container:     Status:
+--------------  -----------------------  -------------------  -------------  ---------------------------
+myscheduledjob  ./read-dumps.sh          schedule: * * * * *  tf-buster-std  Last schedule time: 2021-06-30T10:26:00Z
+alwaysrunning   ./myendlesscommand.sh    continuous           tf-buster-std  Running
+myjob           ./mycommand.sh           normla               tf-buster-std  Completed
+.fi
+
+.TP
+.B delete NAME
+Delete a running job of your own in Toolforge.
+.TP
+.B flush
+Delete all running jobs of your own in Toolforge.
+
+
+.SH OPTIONS
+Normal users wont need any of these options, which are mostly for Toolforge administrators, and
+only documented here for completeness.
+.TP
+.B \-h, \-\-help
+Show summary of options.
+.TP
+.B \-\-debug
+Activate debug mode.
+.TP
+.B \-\-kubeconfig PATH
+Specify kubeconfig file to be read for auth. Defaults to \fB'~/.kube/config'\fP.
+Only useful for Toolforge administrators.
+.TP
+.B \-\-url URL
+Specify URL for the Toolforge Jobs Framework API.
+Only useful for Toolforge administrators.
+.TP
+.B \-\-fqdn FQDN
+Specify FQDN for the Toolforge Jobs Framework API.
+Only useful for Toolforge administrators.
+.TP
+.B \-\-addr [address]
+Specify IPv4 address for the Toolforge Jobs Framework API.
+Only useful for Toolforge administrators.
+.TP
+.B \-\-hdr [json_headers]
+Specify additional HTTP headers (in JSON format) to be used when contacting the Toolforge Jobs
+Framework API.
+Only useful for Toolforge administrators.
+
+
+.SH SEE ALSO
+.BR https://wikitech.wikimedia.org/wiki/Portal:Toolforge ,
+.BR https://jobs.toolforge.org/
+
+.SH AUTHOR
+\fBWikimedia Toolforge\fP is a service provided by the \fBWikimedia Foundation Cloud Services\fP team.
+
+The \fBToolforge Job Framework\fP was initially designed and written by
+\fBArturo Borrero Gonzalez\fP.

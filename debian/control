@@ -2,7 +2,11 @@ Source: toolforge-jobs-framework-cli
 Section: admin
 Priority: optional
 Maintainer: Wikimedia Cloud Services <cloudservices@wikimedia.org>
-Build-Depends: debhelper-compat (= 12), dh-exec, dh-python, python3-setuptools, python3-all
+Build-Depends: debhelper-compat (= 12),
+               dh-exec,
+               dh-python,
+               python3-all,
+               python3-setuptools
 Standards-Version: 4.5.1
 Homepage: https://jobs.toolforge.org
 Vcs-Browser: https://gerrit.wikimedia.org/r/cloud/toolforge/jobs-framework-cli
@@ -11,7 +15,12 @@ Rules-Requires-Root: no
 
 Package: toolforge-jobs-framework-cli
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, python3-tabulate, python3-yaml, python3-requests, python3-json
+Depends: python3-anyjson,
+         python3-requests,
+         python3-tabulate,
+         python3-yaml,
+         ${misc:Depends},
+         ${python3:Depends}
 Description: Command line interface for the Toolforge Jobs framework
  This package contains the command line interface for the Toolforge Jobs
  Framework.

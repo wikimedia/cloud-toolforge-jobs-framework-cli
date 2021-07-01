@@ -156,7 +156,9 @@ def parse_args():
     )
 
     subparser = parser.add_subparsers(
-        help="possible operations (pass -h to know usage of each)", dest="operation"
+        help="possible operations (pass -h to know usage of each)",
+        dest="operation",
+        required=True,
     )
 
     subparser.add_parser(

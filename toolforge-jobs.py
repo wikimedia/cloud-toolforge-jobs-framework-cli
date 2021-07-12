@@ -17,6 +17,7 @@ from tabulate import tabulate
 import textwrap
 import requests
 import argparse
+import getpass
 import urllib3
 import logging
 import time
@@ -423,6 +424,12 @@ def main():
         logging.ERROR, "\033[1;31m%s\033[1;0m" % logging.getLevelName(logging.ERROR)
     )
     logging.basicConfig(format=logging_format, level=logging_level, stream=sys.stdout)
+
+    user = getpass.getuser()
+    if not user.startswith("tools.") and not user.startswith("toolsbeta."):
+        logging.warning(
+            "not running as the tool account? Likely to fail. Perhaps you forgot `become <tool>`?"
+        )
 
     conf = Conf(args.kubeconfig, args.url, args.hdr, args.fqdn, args.addr)
     logging.debug("session configuration generated correctly")

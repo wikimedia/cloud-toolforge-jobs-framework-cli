@@ -30,6 +30,10 @@ import os
 # TODO: disable this for now, review later
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# for --wait: 5 minutes timeout, check every 5 seconds
+WAIT_TIMEOUT = 60 * 5
+WAIT_SLEEP = 5
+
 
 class Conf:
     """
@@ -189,7 +193,10 @@ def parse_args():
         "--continuous", required=False, action="store_true", help="run a continuous job"
     )
     runparser_exclusive_group.add_argument(
-        "--wait", required=False, action="store_true", help="run a job and wait for completition"
+        "--wait",
+        required=False,
+        action="store_true",
+        help=f"run a job and wait for completition. Timeout is {WAIT_TIMEOUT} seconds.",
     )
 
     showparser = subparser.add_parser(
@@ -312,12 +319,24 @@ def op_list(conf: Conf):
 
 
 def _wait_for_job(conf: Conf, name: str):
-    while True:
-        time.sleep(2)
+    curtime = starttime = time.time()
+    while curtime - starttime < WAIT_TIMEOUT:
+        time.sleep(WAIT_SLEEP)
+        curtime = time.time()
+
         job = _show_job(conf, name)
         if job["status_short"] == "Completed":
             logging.info("job completed")
             return
+
+        if job["status_short"] == "Failed":
+            logging.error("job failed:")
+            op_show(conf, name)
+            sys.exit(1)
+
+    logging.error(f"timed out {WAIT_TIMEOUT} seconds waiting for job to complete:")
+    op_show(conf, name)
+    sys.exit(1)
 
 
 def op_run(conf: Conf, name, command, schedule, continuous, image, wait):

@@ -340,15 +340,15 @@ def _wait_for_job(conf: Conf, name: str):
 
         job = _show_job(conf, name)
         if job["status_short"] == "Completed":
-            logging.info("job completed")
+            logging.info(f"job '{name}' completed")
             return
 
         if job["status_short"] == "Failed":
-            logging.error("job failed:")
+            logging.error(f"job '{name}' failed:")
             op_show(conf, name)
             sys.exit(1)
 
-    logging.error(f"timed out {WAIT_TIMEOUT} seconds waiting for job to complete:")
+    logging.error(f"timed out {WAIT_TIMEOUT} seconds waiting for job '{name}' to complete:")
     op_show(conf, name)
     sys.exit(1)
 

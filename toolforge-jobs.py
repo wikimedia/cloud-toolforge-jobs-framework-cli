@@ -45,6 +45,7 @@ class Conf:
         "cmd": "Command:",
         "type": "Job type:",
         "image": "Container:",
+        "filelog": "File log:",
         "status_short": "Status:",
         "status_long": "Hints:",
     }
@@ -198,6 +199,13 @@ def parse_args():
         action="store_true",
         help=f"run a job and wait for completition. Timeout is {WAIT_TIMEOUT} seconds.",
     )
+    runparser_exclusive_group.add_argument(
+        "--no-filelog",
+        required=False,
+        action="store_true",
+        help="don't store job stdout in `jobname`.out and stderr in `jobname`.err files in the "
+        "user home directory.",
+    )
 
     showparser = subparser.add_parser(
         "show",
@@ -261,6 +269,12 @@ def job_prepare_for_output(conf: Conf, job, supress_hints=True):
         job.pop("continuous", None)
     else:
         job["type"] = "normal"
+
+    filelog = job.get("filelog", "false")
+    if filelog == "True":
+        job["filelog"] = "yes"
+    else:
+        job["filelog"] = "no"
 
     # not interested in these fields ATM
     if job.get("user", None) is not None:
@@ -339,13 +353,17 @@ def _wait_for_job(conf: Conf, name: str):
     sys.exit(1)
 
 
-def op_run(conf: Conf, name, command, schedule, continuous, image, wait):
+def op_run(conf: Conf, name, command, schedule, continuous, image, wait, no_filelog: bool):
     payload = {"name": name, "imagename": image, "cmd": command}
 
     if continuous:
         payload["continuous"] = "true"
     elif schedule:
         payload["schedule"] = schedule
+
+    if not no_filelog:
+        # the default is to request the filelog
+        payload["filelog"] = "true"
 
     logging.debug(f"payload: {payload}")
 
@@ -456,7 +474,16 @@ def main():
     if args.operation == "containers":
         op_containers(conf)
     elif args.operation == "run":
-        op_run(conf, args.name, args.command, args.schedule, args.continuous, args.image, args.wait)
+        op_run(
+            conf,
+            args.name,
+            args.command,
+            args.schedule,
+            args.continuous,
+            args.image,
+            args.wait,
+            args.no_filelog,
+        )
     elif args.operation == "show":
         op_show(conf, args.name)
     elif args.operation == "delete":

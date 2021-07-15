@@ -53,13 +53,14 @@ wm-stretch     docker-registry.tools.wmflabs.org/wikimedia-stretch:latest
 .fi
 
 .TP
-.B run NAME --command COMMAND --image IMAGE [--schedule SCHEDULE | --continuous | --wait]
+.B run NAME --command COMMAND --image IMAGE --no-filelog [--schedule SCHEDULE | --continuous | --wait]
 Run a new job of your own in Toolforge. Action specific parameters:
 
 .nf
 NAME                    New job name, unique identifier. Example: "myjob"
 --command COMMAND       The command to run in the job. Example: "./mycommand.sh"
 --image IMAGE           Container image shortname. Check them with the \fBcontainers\fP action. Example: "tf-buster-std".
+--no-filelog            Disable log storage in files in the tool home directory.
 
 --schedule SCHEDULE     If the job is a schedule, cron time specification. Example: "1 * * * *".
 --continuous            Run a continuous job.
@@ -80,6 +81,9 @@ $ toolforge-jobs run myalwaysrunningjob --command ./myendlesscommand.sh --image 
 
 Running a scheduled job:
 $ toolforge-jobs run mycronjob --command ./everyminute.sh --image tf-buster-sd --schedule "1 * * * *"
+
+Running a normal job without logs being stored:
+$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-buster-sd --no-filelog
 .fi
 
 .TP
@@ -99,6 +103,8 @@ $ toolforge-jobs show myscheduledjob
 +------------+-----------------------------------------------------------------+
 | Container: | tf-buster-std                                                   |
 +------------+-----------------------------------------------------------------+
+| File log:  | yes                                                             |
++------------+-----------------------------------------------------------------+
 | Status:    | Last schedule time: 2021-06-30T10:26:00Z                        |
 +------------+-----------------------------------------------------------------+
 | Hints:     | Last run at 2021-06-30T10:26:08Z. Pod in 'Pending' phase. State |
@@ -114,11 +120,11 @@ Example:
 
 .nf
 $ toolforge-jobs list
-Job name:       Command:                 Job type:            Container:     Status:
---------------  -----------------------  -------------------  -------------  ---------------------------
-myscheduledjob  ./read-dumps.sh          schedule: * * * * *  tf-buster-std  Last schedule time: 2021-06-30T10:26:00Z
-alwaysrunning   ./myendlesscommand.sh    continuous           tf-buster-std  Running
-myjob           ./mycommand.sh           normla               tf-buster-std  Completed
+Job name:       Command:                 Job type:            Container:     File log:  Status:
+--------------  -----------------------  -------------------  -------------  ---------  ---------------------------
+myscheduledjob  ./read-dumps.sh          schedule: * * * * *  tf-buster-std  yes        Last schedule time: 2021-06-30T10:26:00Z
+alwaysrunning   ./myendlesscommand.sh    continuous           tf-buster-std  no         Running
+myjob           ./mycommand.sh           normla               tf-buster-std  yes        Completed
 .fi
 
 .TP

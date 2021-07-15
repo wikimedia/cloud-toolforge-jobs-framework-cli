@@ -58,7 +58,7 @@ Run a new job of your own in Toolforge. Action specific parameters:
 
 .nf
 NAME                    New job name, unique identifier. Example: "myjob"
---command COMMAND       The command to run in the job. Example: "./mycommand.sh"
+--command COMMAND       The command to run in the job. Example: "./mycommand.sh argone --argtwo"
 --image IMAGE           Container image shortname. Check them with the \fBcontainers\fP action. Example: "tf-buster-std".
 --no-filelog            Disable log storage in files in the tool home directory.
 
@@ -84,6 +84,9 @@ $ toolforge-jobs run mycronjob --command ./everyminute.sh --image tf-buster-sd -
 
 Running a normal job without logs being stored:
 $ toolforge-jobs run myjob --command ./mycommand.sh --image tf-buster-sd --no-filelog
+
+Running a job with command arguments:
+$ toolforge-jobs run myjob --command "./mycommand.sh --witharguments" --image tf-buster-sd
 .fi
 
 .TP
@@ -97,7 +100,7 @@ $ toolforge-jobs show myscheduledjob
 +------------+-----------------------------------------------------------------+
 | Job name:  | myscheduledjob                                                  |
 +------------+-----------------------------------------------------------------+
-| Command:   | ./read-dumps.sh                                                 |
+| Command:   | ./read-dumps.sh myargument                                      |
 +------------+-----------------------------------------------------------------+
 | Job type:  | schedule: * * * * *                                             |
 +------------+-----------------------------------------------------------------+
@@ -124,7 +127,7 @@ Job name:       Command:                 Job type:            Container:     Fil
 --------------  -----------------------  -------------------  -------------  ---------  ---------------------------
 myscheduledjob  ./read-dumps.sh          schedule: * * * * *  tf-buster-std  yes        Last schedule time: 2021-06-30T10:26:00Z
 alwaysrunning   ./myendlesscommand.sh    continuous           tf-buster-std  no         Running
-myjob           ./mycommand.sh           normla               tf-buster-std  yes        Completed
+myjob           ./mycommand.sh --debug   normal               tf-buster-std  yes        Completed
 .fi
 
 .TP

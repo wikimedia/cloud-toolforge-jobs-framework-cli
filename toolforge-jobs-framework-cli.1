@@ -6,7 +6,7 @@
 .SH NAME
 toolforge-jobs-framework-cli \- command line interface for the Toolforge Jobs Framework
 .SH SYNOPSIS
-.B toolforge-jobs [options] {containers,run,show,list,delete,flush} ...
+.B toolforge-jobs [options] {containers,run,show,list,delete,flush,load} ...
 .SH DESCRIPTION
 The \fBtoolforge-jobs\fP command line interface allows you to interact with the the \fBToolforge
 Jobs Framework\fP.
@@ -136,6 +136,40 @@ Delete a running job of your own in Toolforge.
 .TP
 .B flush
 Delete all running jobs of your own in Toolforge.
+.TP
+.B load FILE
+Flush all jobs (similar to \fBflush\fP action) and read a YAML file with job specifications to be
+loaded and run all at once.
+
+Loading new jobs will stop if failures are found.
+
+The file format mirrors arguments to the \fBrun\fP action.
+
+Example YAML file:
+
+.nf
+---
+# a cronjob
+- name: everyminute
+  command: ./myothercommand.py -v
+  image: tf-buster-std
+  no-filelog: true
+  schedule: "* * * * *"
+# a continuous job
+- image: tf-buster-std
+  name: endlessjob
+  command: ./dumps-daemon.py --endless
+  continuous: true
+# wait for this normal job before loading the next
+- name: myjob
+  image: tf-buster-std
+  command: ./mycommand.sh --argument1
+  wait: true
+# another normal job after the previous one finished running
+- name: anotherjob
+  image: tf-buster-std
+  command: ./mycommand.sh --argument1
+.fi
 
 
 .SH OPTIONS

@@ -229,6 +229,12 @@ def parse_args():
         help="delete all running jobs of your own in Toolforge",
     )
 
+    loadparser = subparser.add_parser(
+        "load",
+        help="flush all jobs and load a YAML file with job definitions and run them",
+    )
+    loadparser.add_argument("file", help="path to YAML file to load")
+
     return parser.parse_args()
 
 
@@ -298,7 +304,7 @@ def job_prepare_for_output(conf: Conf, job, supress_hints=True):
         job[newkey] = job.pop(oldkey, "Unknown")
 
 
-def op_list(conf: Conf):
+def _list_jobs(conf: Conf):
     try:
         response = conf.session.get(conf.api_url + "/list/")
     except Exception as e:
@@ -314,6 +320,12 @@ def op_list(conf: Conf):
     except Exception as e:
         logging.error(f"couldn't parse information from the API. Contact a Toolforge admin: {e}")
         sys.exit(1)
+
+    return list
+
+
+def op_list(conf: Conf):
+    list = _list_jobs(conf)
 
     if len(list) == 0:
         logging.debug("no jobs to be listed")
@@ -446,6 +458,77 @@ def op_flush(conf: Conf):
     logging.debug("all jobs were flushed (if any existed anyway, we didn't check)")
 
 
+def _flush_and_wait(conf: Conf):
+    op_flush(conf)
+
+    curtime = starttime = time.time()
+    while curtime - starttime < WAIT_TIMEOUT:
+        logging.debug(f"waiting for jobs list to be empty, sleeping {WAIT_SLEEP} seconds")
+        time.sleep(WAIT_SLEEP)
+        curtime = time.time()
+
+        list = _list_jobs(conf)
+
+        if len(list) == 0:
+            # ok!
+            return
+
+    logging.error("could not load new jobs")
+    logging.error(f"timed out ({WAIT_TIMEOUT} seconds) waiting for previous jobs to be flushed")
+    sys.exit(1)
+
+
+def _load_job(conf: Conf, job: dict, n: int):
+    # these are mandatory
+    try:
+        name = job["name"]
+        command = job["command"]
+        image = job["image"]
+    except KeyError as e:
+        logging.error(f"Unable to load job number {n}. Missing configuration parameter {str(e)}")
+        sys.exit(1)
+
+    # these are optional
+    schedule = job.get("schedule", None)
+    continuous = job.get("continuous", False)
+    no_filelog = job.get("no-filelog", False)
+
+    if not schedule and not continuous:
+        wait = job.get("wait", False)
+    else:
+        wait = False
+
+    op_run(
+        conf=conf,
+        name=name,
+        command=command,
+        schedule=schedule,
+        continuous=continuous,
+        image=image,
+        wait=wait,
+        no_filelog=no_filelog,
+    )
+
+
+def op_load(conf: Conf, file: str):
+    try:
+        with open(file) as f:
+            jobslist = yaml.safe_load(f.read())
+    except Exception as e:
+        logging.error(f"couldn't read YAML file '{file}': {e}")
+        sys.exit(1)
+
+    logging.debug(f"loaded content from YAML file '{file}':")
+    logging.debug(f"{jobslist}")
+
+    # before loading new jobs, flush and wait for them to go away
+    _flush_and_wait(conf)
+    logging.debug("jobs list is confirmed to be empty, now loading new jobs")
+
+    for n, job in enumerate(jobslist, start=1):
+        _load_job(conf, job, n)
+
+
 def main():
     args = parse_args()
 
@@ -492,6 +575,8 @@ def main():
         op_list(conf)
     elif args.operation == "flush":
         op_flush(conf)
+    elif args.operation == "load":
+        op_load(conf, args.file)
 
     logging.debug("-- end of operations")
 

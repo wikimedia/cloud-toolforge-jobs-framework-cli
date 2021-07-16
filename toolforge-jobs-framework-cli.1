@@ -53,7 +53,7 @@ wm-stretch     docker-registry.tools.wmflabs.org/wikimedia-stretch:latest
 .fi
 
 .TP
-.B run NAME --command COMMAND --image IMAGE --no-filelog [--schedule SCHEDULE | --continuous | --wait]
+.B run NAME --command COMMAND --image IMAGE --no-filelog --mem MEM --cpu CPU [--schedule SCHEDULE | --continuous | --wait]
 Run a new job of your own in Toolforge. Action specific parameters:
 
 .nf
@@ -61,6 +61,8 @@ NAME                    New job name, unique identifier. Example: "myjob"
 --command COMMAND       The command to run in the job. Example: "./mycommand.sh argone --argtwo"
 --image IMAGE           Container image shortname. Check them with the \fBcontainers\fP action. Example: "tf-buster-std".
 --no-filelog            Disable log storage in files in the tool home directory.
+--mem MEM               Request additional memory resource limits for the job.
+--cpu CPU               Request additional CPU resource limits for the job
 
 --schedule SCHEDULE     If the job is a schedule, cron time specification. Example: "1 * * * *".
 --continuous            Run a continuous job.
@@ -87,6 +89,9 @@ $ toolforge-jobs run myjob --command ./mycommand.sh --image tf-buster-sd --no-fi
 
 Running a job with command arguments:
 $ toolforge-jobs run myjob --command "./mycommand.sh --witharguments" --image tf-buster-sd
+
+Running a job requesting additional CPU and memory:
+$ toolforge-jobs run myjob --command "./heavycommand.sh" --image tf-buster-sd --mem 1Gi --cpu 10
 .fi
 
 .TP
@@ -108,6 +113,8 @@ $ toolforge-jobs show myscheduledjob
 +------------+-----------------------------------------------------------------+
 | File log:  | yes                                                             |
 +------------+-----------------------------------------------------------------+
+| Resources: | mem: 10Mi, cpu: 100                                             |
++------------+-----------------------------------------------------------------+
 | Status:    | Last schedule time: 2021-06-30T10:26:00Z                        |
 +------------+-----------------------------------------------------------------+
 | Hints:     | Last run at 2021-06-30T10:26:08Z. Pod in 'Pending' phase. State |
@@ -123,11 +130,11 @@ Example:
 
 .nf
 $ toolforge-jobs list
-Job name:       Command:                 Job type:            Container:     File log:  Status:
---------------  -----------------------  -------------------  -------------  ---------  ---------------------------
-myscheduledjob  ./read-dumps.sh          schedule: * * * * *  tf-buster-std  yes        Last schedule time: 2021-06-30T10:26:00Z
-alwaysrunning   ./myendlesscommand.sh    continuous           tf-buster-std  no         Running
-myjob           ./mycommand.sh --debug   normal               tf-buster-std  yes        Completed
+Job name:       Command:                 Job type:            Container:     File log:  Resources:   Status:
+--------------  -----------------------  -------------------  -------------  ---------  ----------   ---------------------------
+myscheduledjob  ./read-dumps.sh          schedule: * * * * *  tf-buster-std  yes        default      Last schedule time: 2021-06-30T10:26:00Z
+alwaysrunning   ./myendlesscommand.sh    continuous           tf-buster-std  no         default      Running
+myjob           ./mycommand.sh --debug   normal               tf-buster-std  yes        default      Completed
 .fi
 
 .TP

@@ -46,6 +46,7 @@ class Conf:
         "type": "Job type:",
         "image": "Container:",
         "filelog": "File log:",
+        "resources": "Resources:",
         "status_short": "Status:",
         "status_long": "Hints:",
     }
@@ -191,6 +192,16 @@ def parse_args():
         help="don't store job stdout in `jobname`.out and stderr in `jobname`.err files in the "
         "user home directory",
     )
+    runparser.add_argument(
+        "--mem",
+        required=False,
+        help="specify additional memory limit required for this job",
+    )
+    runparser.add_argument(
+        "--cpu",
+        required=False,
+        help="specify additional CPU limit required for this job",
+    )
 
     runparser_exclusive_group = runparser.add_mutually_exclusive_group()
     runparser_exclusive_group.add_argument(
@@ -283,6 +294,13 @@ def job_prepare_for_output(conf: Conf, job, supress_hints=True):
     else:
         job["filelog"] = "no"
 
+    mem = job.pop("memory", "default")
+    cpu = job.pop("cpu", "default")
+    if mem == "default" and cpu == "default":
+        job["resources"] = "default"
+    else:
+        job["resources"] = f"mem: {mem}, cpu: {cpu}"
+
     # not interested in these fields ATM
     if job.get("user", None) is not None:
         job.pop("user", None)
@@ -366,7 +384,18 @@ def _wait_for_job(conf: Conf, name: str):
     sys.exit(1)
 
 
-def op_run(conf: Conf, name, command, schedule, continuous, image, wait, no_filelog: bool):
+def op_run(
+    conf: Conf,
+    name,
+    command,
+    schedule,
+    continuous,
+    image,
+    wait,
+    no_filelog: bool,
+    mem: str,
+    cpu: str,
+):
     payload = {"name": name, "imagename": image, "cmd": command}
 
     if continuous:
@@ -377,6 +406,12 @@ def op_run(conf: Conf, name, command, schedule, continuous, image, wait, no_file
     if not no_filelog:
         # the default is to request the filelog
         payload["filelog"] = "true"
+
+    if mem:
+        payload["memory"] = mem
+
+    if cpu:
+        payload["cpu"] = cpu
 
     logging.debug(f"payload: {payload}")
 
@@ -493,6 +528,8 @@ def _load_job(conf: Conf, job: dict, n: int):
     schedule = job.get("schedule", None)
     continuous = job.get("continuous", False)
     no_filelog = job.get("no-filelog", False)
+    mem = job.get("mem", None)
+    cpu = job.get("cpu", None)
 
     if not schedule and not continuous:
         wait = job.get("wait", False)
@@ -508,6 +545,8 @@ def _load_job(conf: Conf, job: dict, n: int):
         image=image,
         wait=wait,
         no_filelog=no_filelog,
+        mem=mem,
+        cpu=cpu,
     )
 
 
@@ -567,6 +606,8 @@ def main():
             args.image,
             args.wait,
             args.no_filelog,
+            args.mem,
+            args.cpu,
         )
     elif args.operation == "show":
         op_show(conf, args.name)

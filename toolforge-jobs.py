@@ -184,6 +184,14 @@ def parse_args():
     runparser.add_argument(
         "--image", required=True, help="image shortname (check them with `containers`)"
     )
+    runparser.add_argument(
+        "--no-filelog",
+        required=False,
+        action="store_true",
+        help="don't store job stdout in `jobname`.out and stderr in `jobname`.err files in the "
+        "user home directory",
+    )
+
     runparser_exclusive_group = runparser.add_mutually_exclusive_group()
     runparser_exclusive_group.add_argument(
         "--schedule",
@@ -198,13 +206,6 @@ def parse_args():
         required=False,
         action="store_true",
         help=f"run a job and wait for completition. Timeout is {WAIT_TIMEOUT} seconds.",
-    )
-    runparser_exclusive_group.add_argument(
-        "--no-filelog",
-        required=False,
-        action="store_true",
-        help="don't store job stdout in `jobname`.out and stderr in `jobname`.err files in the "
-        "user home directory.",
     )
 
     showparser = subparser.add_parser(

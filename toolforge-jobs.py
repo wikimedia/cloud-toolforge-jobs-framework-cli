@@ -301,17 +301,17 @@ def job_prepare_for_output(conf: Conf, job, supress_hints=True):
     else:
         job["resources"] = f"mem: {mem}, cpu: {cpu}"
 
-    # not interested in these fields ATM
-    if job.get("user", None) is not None:
-        job.pop("user", None)
-    if job.get("namespace", None) is not None:
-        job.pop("namespace", None)
-
     if supress_hints:
         if job.get("status_long", None) is not None:
             job.pop("status_long", None)
     else:
         job["status_long"] = textwrap.fill(job.get("status_long", "Unknown"))
+
+    # not interested in these fields ATM
+    for key in job.copy():
+        if key not in conf.JOB_TABULATION_HEADERS:
+            logging.debug(f"supressing job API field '{key}' before output")
+            job.pop(key)
 
     # normalize key names for easier printing
     for key in conf.JOB_TABULATION_HEADERS:

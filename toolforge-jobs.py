@@ -56,15 +56,40 @@ class Conf:
         "image": "Docker container image",
     }
 
-    def __init__(self, kubeconfig, customurl, customhdr, customfqdn, customaddr):
+    def __init__(self, cfg_file: str):
         """Constructor"""
+
+        try:
+            with open(cfg_file) as f:
+                cfg = yaml.safe_load(f.read())
+        except Exception as e:
+            logging.error(
+                f"couldn't read config file '{cfg_file}': {e}. Contact a Toolforge admin."
+            )
+            sys.exit(1)
+
+        try:
+            self.api_url = cfg.get("api_url")
+        except KeyError as e:
+            logging.error(
+                f"missing key '{str(e)}' in config file '{cfg_file}'. Contact a Toolforge admin."
+            )
+            sys.exit(1)
+
+        kubeconfig = cfg.get("kubeconfig", "~/.kube/config")
+        customhdr = cfg.get("customhdr", None)
+        customaddr = cfg.get("customaddr", None)
+        customfqdn = cfg.get("customfqdn", None)
         self.kubeconfigfile = os.path.expanduser(kubeconfig)
 
         try:
             with open(self.kubeconfigfile) as f:
                 self.k8sconf = yaml.safe_load(f.read())
         except Exception as e:
-            logging.error(f"couldn't read kubeconfig file '{self.kubeconfigfile}': {e}")
+            logging.error(
+                f"couldn't read kubeconfig file '{self.kubeconfigfile}': {e}. "
+                "Contact a Toolforge admin."
+            )
             sys.exit(1)
 
         logging.debug(f"loaded kubeconfig file '{self.kubeconfigfile}'")
@@ -80,12 +105,13 @@ class Conf:
         except KeyError as e:
             logging.error(
                 "couldn't build session configuration from file "
-                f"'{self.kubeconfigfile}': missing key {e}"
+                f"'{self.kubeconfigfile}': missing key {e}. Contact a Toolforge admin."
             )
             sys.exit(1)
         except Exception as e:
             logging.error(
-                "couldn't build session configuration from file " f"'{self.kubeconfigfile}': {e}"
+                "couldn't build session configuration from file "
+                f"'{self.kubeconfigfile}': {e}. Contact a Toolforge admin."
             )
             sys.exit(1)
 
@@ -99,28 +125,6 @@ class Conf:
             from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
 
             self.session.mount(f"https://{customfqdn}", ForcedIPHTTPSAdapter(dest_ip=customaddr))
-
-        if customurl is not None:
-            self.api_url = customurl
-            # we are done here!
-            return
-
-        projectfile = "/etc/wmcs-project"
-        try:
-            with open(projectfile) as f:
-                project = f.read().strip()
-        except Exception as e:
-            logging.error(f"couldn't read file '{projectfile}': {e}")
-            sys.exit(1)
-
-        # TODO: hardcoded? can't we have some kind of service discovery?
-        if project == "toolsbeta":
-            self.api_url = "https://jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001/api/v1"
-        elif project == "tools":
-            self.api_url = "https://jobs.svc.tools.eqiad1.wikimedia.cloud:30001/api/v1"
-        else:
-            logging.error(f"unknown API endpoint in project '{project}'")
-            sys.exit(1)
 
     def _find_cfg_obj(self, kind, name):
         """Lookup a named object in our config."""
@@ -136,30 +140,10 @@ def parse_args():
 
     parser.add_argument("--debug", action="store_true", help="activate debug mode")
     parser.add_argument(
-        "--kubeconfig",
-        default="~/.kube/config",
-        help="user kubeconfig file. Defaults to '%(default)s'. Only useful for Toolforge admins.",
-    )
-    parser.add_argument(
-        "--url",
-        help="use custom URL for the Toolforge jobs framework API endpoint. "
+        "--cfg",
+        default="/etc/toolforge-jobs-framework-cli.cfg",
+        help="YAML config for the CLI. Defaults to '%(default)s'. "
         "Only useful for Toolforge admins.",
-    )
-    parser.add_argument(
-        "--fqdn",
-        help="use custom FQDN for the Toolforge jobs framework API endpoint. "
-        "Only useful for Toolforge admins.",
-    )
-    parser.add_argument(
-        "--addr",
-        help="use custom IP address for the Toolforge jobs framework API endpoint. "
-        "Only useful for Toolforge admins.",
-    )
-    parser.add_argument(
-        "--hdr",
-        type=json.loads,
-        help="use custom HTTP headers (in JSON dictinary format) to contact the Toolforge jobs "
-        "framework API endpoint. Only useful for Toolforge admins.",
     )
 
     subparser = parser.add_subparsers(
@@ -591,7 +575,7 @@ def main():
             "not running as the tool account? Likely to fail. Perhaps you forgot `become <tool>`?"
         )
 
-    conf = Conf(args.kubeconfig, args.url, args.hdr, args.fqdn, args.addr)
+    conf = Conf(args.cfg)
     logging.debug("session configuration generated correctly")
 
     if args.operation == "containers":

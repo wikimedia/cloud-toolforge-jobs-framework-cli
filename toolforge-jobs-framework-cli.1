@@ -189,26 +189,22 @@ Show summary of options.
 .B \-\-debug
 Activate debug mode.
 .TP
-.B \-\-kubeconfig PATH
-Specify kubeconfig file to be read for auth. Defaults to \fB'~/.kube/config'\fP.
-Only useful for Toolforge administrators.
-.TP
-.B \-\-url URL
-Specify URL for the Toolforge Jobs Framework API.
-Only useful for Toolforge administrators.
-.TP
-.B \-\-fqdn FQDN
-Specify FQDN for the Toolforge Jobs Framework API.
-Only useful for Toolforge administrators.
-.TP
-.B \-\-addr [address]
-Specify IPv4 address for the Toolforge Jobs Framework API.
-Only useful for Toolforge administrators.
-.TP
-.B \-\-hdr [json_headers]
-Specify additional HTTP headers (in JSON format) to be used when contacting the Toolforge Jobs
-Framework API.
-Only useful for Toolforge administrators.
+.B \-\-config PATH
+Specify path to a YAML configuration file for the Toolforge Jobs Framework command line interface.
+If not specified, the default is \fB/etc/toolforge-jobs-framework-cli.cfg\fP.
+
+This configuration allows to modify the framework environment and some behavior aspects.
+
+Example YAML configuration file:
+
+.nf
+---
+api_url: https://jobs.svc.tools.eqiad1.wikimedia.cloud:30001/api/v1
+kubeconfig: ~/.kube/config
+customhdr: { 'hdr': 'true' }
+customaddr: 127.0.0.1
+customfqdn: jobs.svc.toolsbeta.eqiad1.wikimedia.cloud
+.fi
 
 
 .SH SEE ALSO

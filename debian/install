@@ -1,2 +1,3 @@
 #!/usr/bin/dh-exec
 toolforge-jobs.py => /usr/bin/toolforge-jobs
+toolforge-jobs-framework-cli.cfg => /etc/toolforge-jobs-framework-cli.cfg

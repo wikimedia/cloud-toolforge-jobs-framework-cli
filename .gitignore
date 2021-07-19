@@ -6,3 +6,5 @@ __pycache__/
 *.swp
 *.pem
 .virtualenv
+test-cfg.yaml
+test-load.yaml

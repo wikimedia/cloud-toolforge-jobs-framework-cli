@@ -1,3 +1,15 @@
+toolforge-jobs-framework-cli (3) buster; urgency=medium
+
+  * [eadb682] toolforge-jobs: introduce job name hint in wait report
+  * [177f1d8] toolforge-jobs: add new option to load jobs from a YAML file
+  * [bd5d3e7] toolforge-jobs: fix parser group for --no-filelog option
+  * [30dc3e8] toolforge-jobs: add support for job resource limits
+  * [099a554] toolforge-jobs: don't show unknown fields
+  * [118f5b5] toolforge-jobs: move CLI configuration into a file
+  * [fbab6bc] jobs-framework-cli: add basic test suite
+
+ -- Arturo Borrero Gonzalez <aborrero@wikimedia.org>  Tue, 20 Jul 2021 19:26:03 +0200
+
 toolforge-jobs-framework-cli (2) buster; urgency=medium
 
   [ JJMC89 ]

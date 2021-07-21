@@ -353,7 +353,11 @@ def _wait_for_job(conf: Conf, name: str):
         time.sleep(WAIT_SLEEP)
         curtime = time.time()
 
-        job = _show_job(conf, name)
+        job = _show_job(conf, name, missing_ok=True)
+        if job is None:
+            logging.info(f"job '{name}' completed (and already deleted)")
+            return
+
         if job["status_short"] == "Completed":
             logging.info(f"job '{name}' completed")
             return
@@ -419,7 +423,7 @@ def op_run(
         _wait_for_job(conf, name)
 
 
-def _show_job(conf: Conf, name):
+def _show_job(conf: Conf, name: str, missing_ok: bool):
     try:
         response = conf.session.get(conf.api_url + f"/show/{name}")
     except Exception as e:
@@ -427,6 +431,9 @@ def _show_job(conf: Conf, name):
         sys.exit(1)
 
     if response.status_code == 404:
+        if missing_ok:
+            return None  # the job doesn't exist, but that's ok!
+
         logging.error(f"job '{name}' does not exists")
         sys.exit(1)
 
@@ -441,7 +448,7 @@ def _show_job(conf: Conf, name):
 
 
 def op_show(conf: Conf, name):
-    job = _show_job(conf, name)
+    job = _show_job(conf, name, missing_ok=False)
     job_prepare_for_output(conf, job, supress_hints=False)
 
     # change table direction

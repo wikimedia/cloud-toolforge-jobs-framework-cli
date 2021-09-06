@@ -1,3 +1,12 @@
+toolforge-jobs-framework-cli (4) buster; urgency=medium
+
+  * [687c063] wait: if the job doesn't exists it means it was
+    already pruned by k8s
+  * [c84ead2] tests/cmd-checklist: update base image
+  * [51261db] docs: refresh them
+
+ -- Arturo Borrero Gonzalez <aborrero@wikimedia.org>  Mon, 06 Sep 2021 18:13:13 +0200
+
 toolforge-jobs-framework-cli (3) buster; urgency=medium
 
   * [eadb682] toolforge-jobs: introduce job name hint in wait report

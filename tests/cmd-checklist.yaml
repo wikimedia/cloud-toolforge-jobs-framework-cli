@@ -8,7 +8,7 @@
       SLEEP: "2"
       BIN: ./toolforge-jobs.py
       TOOLHOME: /data/project/test
-      CONTAINER: tf-buster-std
+      CONTAINER: tf-bullseye-std
       NORMALJOBNAME: test-job
       TESTCMD: test-cmd.sh
       SCHEDJOBNAME: test-sched-job

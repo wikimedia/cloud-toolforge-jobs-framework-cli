@@ -1,6 +1,6 @@
 .\" (C) Copyright 2021 Arturo Borrero Gonzalez <aborrero@wikimedia.org>
 .\"
-.TH TOOLFORGE-JOBS-FRAMEWORK 1 "June 29 2021"
+.TH TOOLFORGE-JOBS-FRAMEWORK 1 "September 6 2021"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .SH NAME
@@ -34,22 +34,42 @@ Top level actions that the command supports:
 List information on available container types for the \fBToolforge Jobs Framework\fP. To be used in
 the \fBrun\fP command \fB--image\fP parameter.
 
+Container images marked as \fBDEPRECATED\fP should be avoided in general.
+
 Example:
 
 .nf
 $ toolforge-jobs containers
-Short name     Docker container image
--------------  ----------------------------------------------------------------------
-tf-buster-std  docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest
-tf-golang111   docker-registry.tools.wmflabs.org/toolforge-golang111-sssd-base:latest
-tf-jdk11       docker-registry.tools.wmflabs.org/toolforge-jdk11-sssd-base:latest
-tf-node10      docker-registry.tools.wmflabs.org/toolforge-node10-sssd-base:latest
-tf-php73       docker-registry.tools.wmflabs.org/toolforge-php73-sssd-base:latest
-tf-python37    docker-registry.tools.wmflabs.org/toolforge-python37-sssd-base:latest
-tf-ruby25      docker-registry.tools.wmflabs.org/toolforge-ruby25-sssd-base:latest
-tf-tcl86       docker-registry.tools.wmflabs.org/toolforge-tcl86-sssd-base:latest
-wm-buster      docker-registry.tools.wmflabs.org/wikimedia-buster:latest
-wm-stretch     docker-registry.tools.wmflabs.org/wikimedia-stretch:latest
++--------------------------+------------------------------------------------------------------------+
+|        Short name        |                         Docker container image                         |
++--------------------------+------------------------------------------------------------------------+
+|     tf-bullseye-std      | docker-registry.tools.wmflabs.org/toolforge-bullseye-standalone:latest |
+| tf-buster-std-DEPRECATED |  docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest  |
+|        tf-golang         |  docker-registry.tools.wmflabs.org/toolforge-golang-sssd-base:latest   |
+|       tf-golang111       | docker-registry.tools.wmflabs.org/toolforge-golang111-sssd-base:latest |
+|         tf-jdk17         |   docker-registry.tools.wmflabs.org/toolforge-jdk17-sssd-base:latest   |
+|   tf-jdk11-DEPRECATED    |   docker-registry.tools.wmflabs.org/toolforge-jdk11-sssd-base:latest   |
+|    tf-jdk8-DEPRECATED    |   docker-registry.tools.wmflabs.org/toolforge-jdk8-sssd-base:latest    |
+|        tf-node12         |  docker-registry.tools.wmflabs.org/toolforge-node12-sssd-base:latest   |
+|   tf-node10-DEPRECATED   |  docker-registry.tools.wmflabs.org/toolforge-node10-sssd-base:latest   |
+|   tf-node6-DEPRECATED    |   docker-registry.tools.wmflabs.org/toolforge-node6-sssd-base:latest   |
+|    tf-php5-DEPRECATED    |   docker-registry.tools.wmflabs.org/toolforge-php5-sssd-base:latest    |
+|   tf-php72-DEPRECATED    |   docker-registry.tools.wmflabs.org/toolforge-php72-sssd-base:latest   |
+|   tf-php73-DEPRECATED    |   docker-registry.tools.wmflabs.org/toolforge-php73-sssd-base:latest   |
+|         tf-php74         |   docker-registry.tools.wmflabs.org/toolforge-php74-sssd-base:latest   |
+|  tf-python2-DEPRECATED   |  docker-registry.tools.wmflabs.org/toolforge-python2-sssd-base:latest  |
+|  tf-python34-DEPRECATED  | docker-registry.tools.wmflabs.org/toolforge-python34-sssd-base:latest  |
+|  tf-python35-DEPRECATED  | docker-registry.tools.wmflabs.org/toolforge-python35-sssd-base:latest  |
+|  tf-python37-DEPRECATED  | docker-registry.tools.wmflabs.org/toolforge-python37-sssd-base:latest  |
+|       tf-python39        | docker-registry.tools.wmflabs.org/toolforge-python39-sssd-base:latest  |
+|   tf-ruby21-DEPRECATED   |  docker-registry.tools.wmflabs.org/toolforge-ruby21-sssd-base:latest   |
+|   tf-ruby25-DEPRECATED   |  docker-registry.tools.wmflabs.org/toolforge-ruby25-sssd-base:latest   |
+|        tf-ruby27         |  docker-registry.tools.wmflabs.org/toolforge-ruby27-sssd-base:latest   |
+|         tf-tcl86         |   docker-registry.tools.wmflabs.org/toolforge-tcl86-sssd-base:latest   |
+|       wm-bullseye        |      docker-registry.tools.wmflabs.org/wikimedia-bullseye:latest       |
+|   wm-buster-DEPRECATED   |       docker-registry.tools.wmflabs.org/wikimedia-buster:latest        |
+|  wm-stretch-DEPRECATED   |       docker-registry.tools.wmflabs.org/wikimedia-stretch:latest       |
++--------------------------+------------------------------------------------------------------------+
 .fi
 
 .TP
@@ -59,7 +79,7 @@ Run a new job of your own in Toolforge. Action specific parameters:
 .nf
 NAME                    New job name, unique identifier. Example: "myjob"
 --command COMMAND       The command to run in the job. Example: "./mycommand.sh argone --argtwo"
---image IMAGE           Container image shortname. Check them with the \fBcontainers\fP action. Example: "tf-buster-std".
+--image IMAGE           Container image shortname. Check them with the \fBcontainers\fP action. Example: "tf-bullseye-std".
 --no-filelog            Disable log storage in files in the tool home directory.
 --mem MEM               Request additional memory resource limits for the job.
 --cpu CPU               Request additional CPU resource limits for the job
@@ -73,25 +93,25 @@ Some complete examples:
 
 .nf
 Running a normal job:
-$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-buster-sd
+$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-sd
 
 Running a normal job and waiting for it to complete:
-$ toolforge-jobs run myotherjob --command ./myothercommand.sh --image tf-buster-sd --wait
+$ toolforge-jobs run myotherjob --command ./myothercommand.sh --image tf-bullseye-sd --wait
 
 Running a continuous job:
-$ toolforge-jobs run myalwaysrunningjob --command ./myendlesscommand.sh --image tf-buster-sd --continuous
+$ toolforge-jobs run myalwaysrunningjob --command ./myendlesscommand.sh --image tf-bullseye-sd --continuous
 
 Running a scheduled job:
-$ toolforge-jobs run mycronjob --command ./everyminute.sh --image tf-buster-sd --schedule "1 * * * *"
+$ toolforge-jobs run mycronjob --command ./everyminute.sh --image tf-bullseye-sd --schedule "1 * * * *"
 
 Running a normal job without logs being stored:
-$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-buster-sd --no-filelog
+$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-sd --no-filelog
 
 Running a job with command arguments:
-$ toolforge-jobs run myjob --command "./mycommand.sh --witharguments" --image tf-buster-sd
+$ toolforge-jobs run myjob --command "./mycommand.sh --witharguments" --image tf-bullseye-sd
 
 Running a job requesting additional CPU and memory:
-$ toolforge-jobs run myjob --command "./heavycommand.sh" --image tf-buster-sd --mem 1Gi --cpu 10
+$ toolforge-jobs run myjob --command "./heavycommand.sh" --image tf-bullseye-sd --mem 1Gi --cpu 10
 .fi
 
 .TP
@@ -109,7 +129,7 @@ $ toolforge-jobs show myscheduledjob
 +------------+-----------------------------------------------------------------+
 | Job type:  | schedule: * * * * *                                             |
 +------------+-----------------------------------------------------------------+
-| Container: | tf-buster-std                                                   |
+| Container: | tf-bullseye-std                                                 |
 +------------+-----------------------------------------------------------------+
 | File log:  | yes                                                             |
 +------------+-----------------------------------------------------------------+
@@ -130,11 +150,11 @@ Example:
 
 .nf
 $ toolforge-jobs list
-Job name:       Command:                 Job type:            Container:     File log:  Resources:   Status:
---------------  -----------------------  -------------------  -------------  ---------  ----------   ---------------------------
-myscheduledjob  ./read-dumps.sh          schedule: * * * * *  tf-buster-std  yes        default      Last schedule time: 2021-06-30T10:26:00Z
-alwaysrunning   ./myendlesscommand.sh    continuous           tf-buster-std  no         default      Running
-myjob           ./mycommand.sh --debug   normal               tf-buster-std  yes        default      Completed
+Job name:       Command:                 Job type:            Container:       File log:  Resources:   Status:
+--------------  -----------------------  -------------------  -------------    ---------  ----------   ---------------------------
+myscheduledjob  ./read-dumps.sh          schedule: * * * * *  tf-bullseye-std  yes        default      Last schedule time: 2021-06-30T10:26:00Z
+alwaysrunning   ./myendlesscommand.sh    continuous           tf-bullseye-std  no         default      Running
+myjob           ./mycommand.sh --debug   normal               tf-bullseye-std  yes        default      Completed
 .fi
 
 .TP
@@ -159,22 +179,22 @@ Example YAML file:
 # a cronjob
 - name: everyminute
   command: ./myothercommand.py -v
-  image: tf-buster-std
+  image: tf-bullseye-std
   no-filelog: true
   schedule: "* * * * *"
 # a continuous job
-- image: tf-buster-std
+- image: tf-bullseye-std
   name: endlessjob
   command: ./dumps-daemon.py --endless
   continuous: true
 # wait for this normal job before loading the next
 - name: myjob
-  image: tf-buster-std
+  image: tf-bullseye-std
   command: ./mycommand.sh --argument1
   wait: true
 # another normal job after the previous one finished running
 - name: anotherjob
-  image: tf-buster-std
+  image: tf-bullseye-std
   command: ./mycommand.sh --argument1
 .fi
 
@@ -189,7 +209,7 @@ Show summary of options.
 .B \-\-debug
 Activate debug mode.
 .TP
-.B \-\-config PATH
+.B \-\-cfg PATH
 Specify path to a YAML configuration file for the Toolforge Jobs Framework command line interface.
 If not specified, the default is \fB/etc/toolforge-jobs-framework-cli.cfg\fP.
 

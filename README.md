@@ -2,20 +2,23 @@
 
 This is the source code of command line interface part of the Toolforge Jobs Framework.
 
+The TJF creates an abstraction layer over kubernetes Jobs, CronJobs and Deployments to allow
+operating a Kubernetes installation as if it were a Grid (like GridEngine).
+
+This was created for [Wikimedia Toolforge](https://tolforge.org).
+
 ## Usage
 
-Some usage examples.
-
-Show help:
+The help message:
 
 ```console
 $ toolforge-jobs --help
-usage: toolforge-jobs.py [-h] [--debug] [--kubeconfig KUBECONFIG] [--url URL] [--hdr HDR] {containers,run,show,list,delete,flush} ...
+usage: toolforge-jobs [-h] [--debug] [--cfg CFG] {containers,run,show,list,delete,flush,load} ...
 
 Toolforge Jobs Framework, command line interface
 
 positional arguments:
-  {containers,run,show,list,delete,flush}
+  {containers,run,show,list,delete,flush,load}
                         possible operations (pass -h to know usage of each)
     containers          list information on available container types for Toolforge jobs
     run                 run a new job of your own in Toolforge
@@ -23,44 +26,26 @@ positional arguments:
     list                list all running jobs of your own in Toolforge
     delete              delete a running job of your own in Toolforge
     flush               delete all running jobs of your own in Toolforge
+    load                flush all jobs and load a YAML file with job definitions and run them
 
 optional arguments:
   -h, --help            show this help message and exit
   --debug               activate debug mode
-  --kubeconfig KUBECONFIG
-                        user kubeconfig file. Defaults to '~/.kube/config'
-  --url URL             use custom URL for the Toolforge jobs framework API endpoint
-  --hdr HDR             use custom HTTP headers to contact the Toolforge jobs framework API endpoint
-
+  --cfg CFG             YAML config for the CLI. Defaults to '/etc/toolforge-jobs-framework-cli.cfg'. Only useful for Toolforge admins.
 ```
 
-Get containers list:
-
-```console
-$ toolforge-jobs containers
-Short name     Docker container image
--------------  --------------------------------------------------------------------
-tf-buster      docker-registry.tools.wmflabs.org/toolforge-buster-sssd:latest
-tf-buster-std  docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest
-```
-
-Run a job:
-
-```console
-$ toolforge-jobs run myjob --command ./sleep.sh --image tf-buster-std
-$ toolforge-jobs list
-Job id    Job command    image shortname    Job status    Job type
---------  -------------  -----------------  ------------  ----------
-myjob     ./sleep.sh     tf-buster-std      unknown       normal
-```
+More information in the manpage.
 
 ## Installation
 
-TODO
+We currently deploy this code into Toolforge using a debian package that is built from this very
+source tree.
 
 ## Contributing
 
-TODO
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+Please make sure to update tests as appropriate.
 
 ## License
 [GPLv3](https://choosealicense.com/licenses/gpl-3.0/)

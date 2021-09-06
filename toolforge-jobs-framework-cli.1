@@ -93,25 +93,25 @@ Some complete examples:
 
 .nf
 Running a normal job:
-$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-sd
+$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-std
 
 Running a normal job and waiting for it to complete:
-$ toolforge-jobs run myotherjob --command ./myothercommand.sh --image tf-bullseye-sd --wait
+$ toolforge-jobs run myotherjob --command ./myothercommand.sh --image tf-bullseye-std --wait
 
 Running a continuous job:
-$ toolforge-jobs run myalwaysrunningjob --command ./myendlesscommand.sh --image tf-bullseye-sd --continuous
+$ toolforge-jobs run myalwaysrunningjob --command ./myendlesscommand.sh --image tf-bullseye-std --continuous
 
 Running a scheduled job:
-$ toolforge-jobs run mycronjob --command ./everyminute.sh --image tf-bullseye-sd --schedule "1 * * * *"
+$ toolforge-jobs run mycronjob --command ./everyminute.sh --image tf-bullseye-std --schedule "1 * * * *"
 
 Running a normal job without logs being stored:
-$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-sd --no-filelog
+$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-std --no-filelog
 
 Running a job with command arguments:
-$ toolforge-jobs run myjob --command "./mycommand.sh --witharguments" --image tf-bullseye-sd
+$ toolforge-jobs run myjob --command "./mycommand.sh --witharguments" --image tf-bullseye-std
 
 Running a job requesting additional CPU and memory:
-$ toolforge-jobs run myjob --command "./heavycommand.sh" --image tf-bullseye-sd --mem 1Gi --cpu 10
+$ toolforge-jobs run myjob --command "./heavycommand.sh" --image tf-bullseye-std --mem 1Gi --cpu 10
 .fi
 
 .TP

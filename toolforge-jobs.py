@@ -46,6 +46,7 @@ class Conf:
         "type": "Job type:",
         "image": "Container:",
         "filelog": "File log:",
+        "emails": "Emails:",
         "resources": "Resources:",
         "status_short": "Status:",
         "status_long": "Hints:",
@@ -185,6 +186,14 @@ def parse_args():
         "--cpu",
         required=False,
         help="specify additional CPU limit required for this job",
+    )
+    runparser.add_argument(
+        "--emails",
+        required=False,
+        choices=["none", "all", "onfinish", "onfailure"],
+        default="none",
+        help="specify if the system should email notifications about this job. "
+        "Defaults to '%(default)s'.",
     )
 
     runparser_exclusive_group = runparser.add_mutually_exclusive_group()
@@ -383,8 +392,9 @@ def op_run(
     no_filelog: bool,
     mem: str,
     cpu: str,
+    emails: str,
 ):
-    payload = {"name": name, "imagename": image, "cmd": command}
+    payload = {"name": name, "imagename": image, "cmd": command, "emails": emails}
 
     if continuous:
         payload["continuous"] = "true"
@@ -521,6 +531,7 @@ def _load_job(conf: Conf, job: dict, n: int):
     no_filelog = job.get("no-filelog", False)
     mem = job.get("mem", None)
     cpu = job.get("cpu", None)
+    emails = job.get("emails", "none")
 
     if not schedule and not continuous:
         wait = job.get("wait", False)
@@ -538,6 +549,7 @@ def _load_job(conf: Conf, job: dict, n: int):
         no_filelog=no_filelog,
         mem=mem,
         cpu=cpu,
+        emails=emails,
     )
 
 
@@ -599,6 +611,7 @@ def main():
             args.no_filelog,
             args.mem,
             args.cpu,
+            args.emails,
         )
     elif args.operation == "show":
         op_show(conf, args.name)

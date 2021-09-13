@@ -82,11 +82,13 @@
       retcode: 0
     - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | egrep -q "Hints:"
       retcode: 0
+    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | egrep -q "Emails:"
+      retcode: 0
 
 - name: list normal job
   tests:
     # predictable table headers
-    - cmd: ${BIN} --cfg ${CFGFILE} list | grep "Job name:" | grep "Command:" | grep "Job type:" | grep "Container:" | grep "File log:" | grep "Resources:" | grep -q "Status:"
+    - cmd: ${BIN} --cfg ${CFGFILE} list | grep "Job name:" | grep "Command:" | grep "Job type:" | grep "Container:" | grep "File log:" | grep "Resources:" | grep "Status:" | grep -q "Emails:"
       retcode: 0
     # predictable job list output
     - cmd: ${BIN} --cfg ${CFGFILE} list | grep ${NORMALJOBNAME} | grep "./${TESTCMD} --withargs" | grep "normal" | grep ${CONTAINER} | grep yes | grep -q default
@@ -196,14 +198,17 @@
              image: ${CONTAINER}
              no-filelog: true
              schedule: "* * * * *"
+             emails: onfinish
            - image: ${CONTAINER}
              name: ${CONTJOBNAME}
              command: ./${TESTCMD} --withargs
              continuous: true
+             emails: onfailure
            - name: ${NORMALJOBNAME}
              image: ${CONTAINER}
              command: ./${TESTCMD} --withargs
              wait: true
+             emails: all
            EOF
       retcode: 0
     - cmd: ${BIN} --cfg ${CFGFILE} load ${LOADFILE}

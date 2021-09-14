@@ -1,3 +1,11 @@
+toolforge-jobs-framework-cli (5) buster; urgency=medium
+
+  * [c675851] toolforge-jobs-framework-cli.1: fix typo 'sd'
+  * [847ffc3] jobs: add support for selecting email notifications
+  * [63cfb3f] toolforge-jobs-framework-cli.1: refresh manpage
+
+ -- Arturo Borrero Gonzalez <aborrero@wikimedia.org>  Tue, 14 Sep 2021 12:25:40 +0200
+
 toolforge-jobs-framework-cli (4) buster; urgency=medium
 
   * [687c063] wait: if the job doesn't exists it means it was

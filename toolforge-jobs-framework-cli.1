@@ -1,6 +1,6 @@
 .\" (C) Copyright 2021 Arturo Borrero Gonzalez <aborrero@wikimedia.org>
 .\"
-.TH TOOLFORGE-JOBS-FRAMEWORK 1 "September 6 2021"
+.TH TOOLFORGE-JOBS-FRAMEWORK 1 "September 14 2021"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .SH NAME
@@ -83,6 +83,7 @@ NAME                    New job name, unique identifier. Example: "myjob"
 --no-filelog            Disable log storage in files in the tool home directory.
 --mem MEM               Request additional memory resource limits for the job.
 --cpu CPU               Request additional CPU resource limits for the job
+--emails OPT            Specify if you want to receive emails about events for this job. Choices are 'none', 'all', 'onfailure', 'onfinish'. The default is 'none'.
 
 --schedule SCHEDULE     If the job is a schedule, cron time specification. Example: "1 * * * *".
 --continuous            Run a continuous job.
@@ -105,10 +106,10 @@ Running a scheduled job:
 $ toolforge-jobs run mycronjob --command ./everyminute.sh --image tf-bullseye-std --schedule "1 * * * *"
 
 Running a normal job without logs being stored:
-$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-std --no-filelog
+$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-std --no-filelog --emails none
 
 Running a job with command arguments:
-$ toolforge-jobs run myjob --command "./mycommand.sh --witharguments" --image tf-bullseye-std
+$ toolforge-jobs run myjob --command "./mycommand.sh --witharguments" --image tf-bullseye-std --emails all
 
 Running a job requesting additional CPU and memory:
 $ toolforge-jobs run myjob --command "./heavycommand.sh" --image tf-bullseye-std --mem 1Gi --cpu 10
@@ -133,6 +134,8 @@ $ toolforge-jobs show myscheduledjob
 +------------+-----------------------------------------------------------------+
 | File log:  | yes                                                             |
 +------------+-----------------------------------------------------------------+
+| Emails:    | none                                                            |
++------------+-----------------------------------------------------------------+
 | Resources: | mem: 10Mi, cpu: 100                                             |
 +------------+-----------------------------------------------------------------+
 | Status:    | Last schedule time: 2021-06-30T10:26:00Z                        |
@@ -150,11 +153,11 @@ Example:
 
 .nf
 $ toolforge-jobs list
-Job name:       Command:                 Job type:            Container:       File log:  Resources:   Status:
---------------  -----------------------  -------------------  -------------    ---------  ----------   ---------------------------
-myscheduledjob  ./read-dumps.sh          schedule: * * * * *  tf-bullseye-std  yes        default      Last schedule time: 2021-06-30T10:26:00Z
-alwaysrunning   ./myendlesscommand.sh    continuous           tf-bullseye-std  no         default      Running
-myjob           ./mycommand.sh --debug   normal               tf-bullseye-std  yes        default      Completed
+Job name:       Command:                 Job type:            Container:        File log:  Emails:   Resources:   Status:
+--------------  -----------------------  -------------------  ---------------   ---------  -------   ----------   ---------------------------
+myscheduledjob  ./read-dumps.sh          schedule: * * * * *  tf-bullseye-std   yes        none      default      Last schedule time: 2021-06-30T10:26:00Z
+alwaysrunning   ./myendlesscommand.sh    continuous           tf-bullseye-std   no         all       default      Running
+myjob           ./mycommand.sh --debug   normal               tf-bullseye-std   yes        onfinish  default      Completed
 .fi
 
 .TP
@@ -182,20 +185,24 @@ Example YAML file:
   image: tf-bullseye-std
   no-filelog: true
   schedule: "* * * * *"
+  emails: onfailure
 # a continuous job
 - image: tf-bullseye-std
   name: endlessjob
   command: ./dumps-daemon.py --endless
   continuous: true
+  emails: all
 # wait for this normal job before loading the next
 - name: myjob
   image: tf-bullseye-std
   command: ./mycommand.sh --argument1
   wait: true
+  emails: onfishih
 # another normal job after the previous one finished running
 - name: anotherjob
   image: tf-bullseye-std
   command: ./mycommand.sh --argument1
+  emails: none
 .fi
 
 

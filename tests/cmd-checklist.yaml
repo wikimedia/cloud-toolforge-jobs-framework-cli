@@ -61,7 +61,7 @@
       retcode: 0
       stderr: ""
     - cmd: chmod a+x ${TOOLHOME}/${TESTCMD}
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER}
+    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --wait
       retcode: 0
 
 - name: show normal job
@@ -185,7 +185,7 @@
       retcode: 0
     - cmd: ${BIN} --cfg ${CFGFILE} list | grep ${CONTAINER} | wc -l
       retcode: 0
-      stdout: "3\n"
+      stdout: "3"
 
 - name: job loading
   tests:
@@ -215,7 +215,7 @@
       retcode: 0
     - cmd: ${BIN} --cfg ${CFGFILE} list | grep ${CONTAINER} | wc -l
       retcode: 0
-      stdout: "3\n"
+      stdout: "3"
 
 - name: cleanup
   tests:

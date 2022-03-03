@@ -5,7 +5,7 @@ This is the source code of command line interface part of the Toolforge Jobs Fra
 The TJF creates an abstraction layer over kubernetes Jobs, CronJobs and Deployments to allow
 operating a Kubernetes installation as if it were a Grid (like GridEngine).
 
-This was created for [Wikimedia Toolforge](https://tolforge.org).
+This was created for [Wikimedia Toolforge](https://toolforge.org).
 
 ## Usage
 
@@ -34,7 +34,7 @@ optional arguments:
   --cfg CFG             YAML config for the CLI. Defaults to '/etc/toolforge-jobs-framework-cli.cfg'. Only useful for Toolforge admins.
 ```
 
-More information in the manpage.
+More information at [Wikitech](https://wikitech.wikimedia.org/wiki/Help:Toolforge/Jobs_framework) and in the man page.
 
 ## Installation
 

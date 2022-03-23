@@ -85,13 +85,22 @@
     - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | egrep -q "Emails:"
       retcode: 0
 
-- name: list normal job
+- name: list normal job (long)
   tests:
     # predictable table headers
-    - cmd: ${BIN} --cfg ${CFGFILE} list | grep "Job name:" | grep "Command:" | grep "Job type:" | grep "Container:" | grep "File log:" | grep "Resources:" | grep "Status:" | grep -q "Emails:"
+    - cmd: ${BIN} --cfg ${CFGFILE} list -l | grep "Job name:" | grep "Command:" | grep "Job type:" | grep "Container:" | grep "File log:" | grep "Resources:" | grep "Status:" | grep -q "Emails:"
       retcode: 0
     # predictable job list output
-    - cmd: ${BIN} --cfg ${CFGFILE} list | grep ${NORMALJOBNAME} | grep "./${TESTCMD} --withargs" | grep "normal" | grep ${CONTAINER} | grep yes | grep -q default
+    - cmd: ${BIN} --cfg ${CFGFILE} list --long | grep ${NORMALJOBNAME} | grep "./${TESTCMD} --withargs" | grep "normal" | grep ${CONTAINER} | grep yes | grep -q default
+      retcode: 0
+
+- name: list normal job (short)
+  tests:
+    # predictable table headers
+    - cmd: ${BIN} --cfg ${CFGFILE} list | grep "Job name:" | grep "Job type:" | grep -q "Status:"
+      retcode: 0
+    # predictable job list output
+    - cmd: ${BIN} --cfg ${CFGFILE} list | grep ${NORMALJOBNAME} | grep -q "normal"
       retcode: 0
 
 - name: normal job produces file logs
@@ -183,7 +192,7 @@
       retcode: 0
     - cmd: ${BIN} --cfg ${CFGFILE} run ${SCHEDJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --schedule "* * * * *"
       retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} list | grep ${CONTAINER} | wc -l
+    - cmd: ${BIN} --cfg ${CFGFILE} list --long | grep ${CONTAINER} | wc -l
       retcode: 0
       stdout: "3"
 
@@ -213,7 +222,7 @@
       retcode: 0
     - cmd: ${BIN} --cfg ${CFGFILE} load ${LOADFILE}
       retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} list | grep ${CONTAINER} | wc -l
+    - cmd: ${BIN} --cfg ${CFGFILE} list --long | grep ${CONTAINER} | wc -l
       retcode: 0
       stdout: "3"
 
@@ -221,5 +230,5 @@
   tests:
     - cmd: ${BIN} --cfg ${CFGFILE} flush
       retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} list | grep -q ${CONTAINERS}
+    - cmd: ${BIN} --cfg ${CFGFILE} list --long | grep -q ${CONTAINERS}
       retcode: 2

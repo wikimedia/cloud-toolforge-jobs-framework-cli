@@ -41,7 +41,13 @@ class Conf:
     Class that represents the configuration for this CLI session
     """
 
-    JOB_TABULATION_HEADERS = {
+    JOB_TABULATION_HEADERS_SHORT = {
+        "name": "Job name:",
+        "type": "Job type:",
+        "status_short": "Status:",
+    }
+
+    JOB_TABULATION_HEADERS_LONG = {
         "name": "Job name:",
         "cmd": "Command:",
         "type": "Job type:",
@@ -228,9 +234,16 @@ def parse_args():
     )
     showparser.add_argument("name", help="job name")
 
-    subparser.add_parser(
+    listparser = subparser.add_parser(
         "list",
         help="list all running jobs of your own in Toolforge",
+    )
+    listparser.add_argument(
+        "-l",
+        "--long",
+        required=False,
+        action="store_true",
+        help="show long table with full details about each job",
     )
 
     deleteparser = subparser.add_parser(
@@ -279,7 +292,7 @@ def op_containers(conf: Conf):
     print(output)
 
 
-def job_prepare_for_output(conf: Conf, job, supress_hints=True):
+def job_prepare_for_output(conf: Conf, job, long_listing=False, supress_hints=True):
     schedule = job.get("schedule", None)
     cont = job.get("continuous", None)
     if schedule is not None:
@@ -310,19 +323,24 @@ def job_prepare_for_output(conf: Conf, job, supress_hints=True):
     else:
         job["status_long"] = textwrap.fill(job.get("status_long", "Unknown"))
 
+    if long_listing:
+        headers = conf.JOB_TABULATION_HEADERS_LONG
+    else:
+        headers = conf.JOB_TABULATION_HEADERS_SHORT
+
     # not interested in these fields ATM
     for key in job.copy():
-        if key not in conf.JOB_TABULATION_HEADERS:
+        if key not in headers:
             logging.debug(f"supressing job API field '{key}' before output")
             job.pop(key)
 
     # normalize key names for easier printing
-    for key in conf.JOB_TABULATION_HEADERS:
+    for key in headers:
         if key == "status_long" and supress_hints:
             continue
 
         oldkey = key
-        newkey = conf.JOB_TABULATION_HEADERS[key]
+        newkey = headers[key]
         job[newkey] = job.pop(oldkey, "Unknown")
 
 
@@ -346,7 +364,7 @@ def _list_jobs(conf: Conf):
     return list
 
 
-def op_list(conf: Conf):
+def op_list(conf: Conf, long_listing: bool):
     list = _list_jobs(conf)
 
     if len(list) == 0:
@@ -356,9 +374,14 @@ def op_list(conf: Conf):
     try:
         for job in list:
             logging.debug(f"job information from the API: {job}")
-            job_prepare_for_output(conf, job, supress_hints=True)
+            job_prepare_for_output(conf, job, supress_hints=True, long_listing=long_listing)
 
-        output = tabulate(list, headers=conf.JOB_TABULATION_HEADERS, tablefmt="pretty")
+        if long_listing:
+            headers = conf.JOB_TABULATION_HEADERS_LONG
+        else:
+            headers = conf.JOB_TABULATION_HEADERS_SHORT
+
+        output = tabulate(list, headers=headers, tablefmt="pretty")
     except Exception as e:
         logging.error(f"couldn't format information from the API. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -469,7 +492,7 @@ def _show_job(conf: Conf, name: str, missing_ok: bool):
 
 def op_show(conf: Conf, name):
     job = _show_job(conf, name, missing_ok=False)
-    job_prepare_for_output(conf, job, supress_hints=False)
+    job_prepare_for_output(conf, job, supress_hints=False, long_listing=True)
 
     # change table direction
     kvlist = []
@@ -628,7 +651,7 @@ def main():
     elif args.operation == "delete":
         op_delete(conf, args.name)
     elif args.operation == "list":
-        op_list(conf)
+        op_list(conf, args.long)
     elif args.operation == "flush":
         op_flush(conf)
     elif args.operation == "load":

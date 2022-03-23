@@ -20,6 +20,7 @@ import argparse
 import getpass
 import urllib3
 import logging
+import socket
 import time
 import json
 import yaml
@@ -116,6 +117,8 @@ class Conf:
             )
             sys.exit(1)
 
+        self._configure_user_agent()
+
         if customhdr is not None:
             self.session.headers.update(customhdr)
 
@@ -126,6 +129,13 @@ class Conf:
             from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
 
             self.session.mount(f"https://{customfqdn}", ForcedIPHTTPSAdapter(dest_ip=customaddr))
+
+    def _configure_user_agent(self):
+        """Configure User-Agent header."""
+        host = socket.gethostname()
+        pyrequest_ua = requests.utils.default_user_agent()
+        ua_str = f"jobs-framework-cli {self.namespace}@{host} {pyrequest_ua}"
+        self.session.headers.update({"User-Agent": ua_str})
 
     def _find_cfg_obj(self, kind, name):
         """Lookup a named object in our config."""

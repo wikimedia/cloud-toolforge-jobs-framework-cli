@@ -614,7 +614,7 @@ def op_load(conf: Conf, file: str):
 def main():
     args = parse_args()
 
-    logging_format = "[%(filename)s] %(levelname)s: %(message)s"
+    logging_format = "%(asctime)s %(filename)s %(levelname)s: %(message)s"
     if args.debug:
         logging_level = logging.DEBUG
     else:
@@ -625,7 +625,9 @@ def main():
     logging.addLevelName(
         logging.ERROR, "\033[1;31m%s\033[1;0m" % logging.getLevelName(logging.ERROR)
     )
-    logging.basicConfig(format=logging_format, level=logging_level, stream=sys.stdout)
+    logging.basicConfig(
+        format=logging_format, level=logging_level, stream=sys.stdout, datefmt="%Y-%m-%d %H:%M:%S"
+    )
 
     user = getpass.getuser()
     if not user.startswith("tools.") and not user.startswith("toolsbeta."):

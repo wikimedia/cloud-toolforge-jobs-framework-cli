@@ -51,7 +51,7 @@ class Conf:
         "name": "Job name:",
         "cmd": "Command:",
         "type": "Job type:",
-        "image": "Container:",
+        "image": "Image:",
         "filelog": "File log:",
         "emails": "Emails:",
         "resources": "Resources:",
@@ -59,7 +59,7 @@ class Conf:
         "status_long": "Hints:",
     }
 
-    CONTAINER_TABULATION_HEADERS = {
+    IMAGES_TABULATION_HEADERS = {
         "shortname": "Short name",
         "image": "Docker container image",
     }
@@ -169,9 +169,14 @@ def parse_args():
         required=True,
     )
 
+    # TODO: remove this after a few months
     subparser.add_parser(
         "containers",
-        help="list information on available container types for Toolforge jobs",
+        help="Kept for compatibility reasons, use `images` instead.",
+    )
+    subparser.add_parser(
+        "images",
+        help="list information on available container image types for Toolforge jobs",
     )
 
     runparser = subparser.add_parser(
@@ -184,7 +189,7 @@ def parse_args():
         "--command", required=True, help="full path of command to run in this job"
     )
     runparser.add_argument(
-        "--image", required=True, help="image shortname (check them with `containers`)"
+        "--image", required=True, help="image shortname (check them with `images`)"
     )
     runparser.add_argument(
         "--no-filelog",
@@ -266,8 +271,9 @@ def parse_args():
     return parser.parse_args()
 
 
-def op_containers(conf: Conf):
+def op_images(conf: Conf):
     try:
+        # TODO: URL update?
         response = conf.session.get(conf.api_url + "/containers/")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
@@ -278,13 +284,13 @@ def op_containers(conf: Conf):
         sys.exit(1)
 
     try:
-        containers = json.loads(response.text)
+        images = json.loads(response.text)
     except Exception as e:
         logging.error(f"couldn't parse information from the API. Contact a Toolforge admin: {e}")
         sys.exit(1)
 
     try:
-        output = tabulate(containers, headers=conf.CONTAINER_TABULATION_HEADERS, tablefmt="pretty")
+        output = tabulate(images, headers=conf.IMAGES_TABULATION_HEADERS, tablefmt="pretty")
     except Exception as e:
         logging.error(f"couldn't format information from the API. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -630,8 +636,12 @@ def main():
     conf = Conf(args.cfg)
     logging.debug("session configuration generated correctly")
 
-    if args.operation == "containers":
-        op_containers(conf)
+    if args.operation == "images":
+        op_images(conf)
+    elif args.operation == "containers":
+        # TODO: remove this after a few months
+        logging.warning("the `containers` action is deprecated. Use `images` instead.")
+        op_images(conf)
     elif args.operation == "run":
         op_run(
             conf,

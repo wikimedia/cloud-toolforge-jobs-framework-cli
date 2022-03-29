@@ -6,7 +6,7 @@
 .SH NAME
 toolforge-jobs-framework-cli \- command line interface for the Toolforge Jobs Framework
 .SH SYNOPSIS
-.B toolforge-jobs [options] {containers,run,show,list,delete,flush,load} ...
+.B toolforge-jobs [options] {images,run,show,list,delete,flush,load} ...
 .SH DESCRIPTION
 The \fBtoolforge-jobs\fP command line interface allows you to interact with the the \fBToolforge
 Jobs Framework\fP.
@@ -30,8 +30,8 @@ Jobs that once created by the user are expected to be always up and running (for
 Top level actions that the command supports:
 
 .TP
-.B containers
-List information on available container types for the \fBToolforge Jobs Framework\fP. To be used in
+.B images
+List information on available container image types for the \fBToolforge Jobs Framework\fP. To be used in
 the \fBrun\fP command \fB--image\fP parameter.
 
 Container images marked as \fBDEPRECATED\fP should be avoided in general.
@@ -39,7 +39,7 @@ Container images marked as \fBDEPRECATED\fP should be avoided in general.
 Example:
 
 .nf
-$ toolforge-jobs containers
+$ toolforge-jobs images
 +--------------------------+------------------------------------------------------------------------+
 |        Short name        |                         Docker container image                         |
 +--------------------------+------------------------------------------------------------------------+

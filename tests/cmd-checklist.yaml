@@ -35,17 +35,17 @@
     - cmd: ${BIN} --cfg ${CFGFILE} flush
     - cmd: sleep ${SLEEP}
 
-- name: list containers
+- name: list images
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} containers | grep -q "Short name"
+    - cmd: ${BIN} --cfg ${CFGFILE} images | grep -q "Short name"
       retcode: 0
       stdout: ""
       stderr: ""
-    - cmd: ${BIN} --cfg ${CFGFILE} containers | grep -q "Docker container image"
+    - cmd: ${BIN} --cfg ${CFGFILE} images | grep -q "Docker container image"
       retcode: 0
       stdout: ""
       stderr: ""
-    - cmd: ${BIN} --cfg ${CFGFILE} containers | grep -q ${CONTAINER}
+    - cmd: ${BIN} --cfg ${CFGFILE} images | grep -q ${CONTAINER}
       retcode: 0
       stdout: ""
       stderr: ""
@@ -88,7 +88,7 @@
 - name: list normal job (long)
   tests:
     # predictable table headers
-    - cmd: ${BIN} --cfg ${CFGFILE} list -l | grep "Job name:" | grep "Command:" | grep "Job type:" | grep "Container:" | grep "File log:" | grep "Resources:" | grep "Status:" | grep -q "Emails:"
+    - cmd: ${BIN} --cfg ${CFGFILE} list -l | grep "Job name:" | grep "Command:" | grep "Job type:" | grep "Image:" | grep "File log:" | grep "Resources:" | grep "Status:" | grep -q "Emails:"
       retcode: 0
     # predictable job list output
     - cmd: ${BIN} --cfg ${CFGFILE} list --long | grep ${NORMALJOBNAME} | grep "./${TESTCMD} --withargs" | grep "normal" | grep ${CONTAINER} | grep yes | grep -q default

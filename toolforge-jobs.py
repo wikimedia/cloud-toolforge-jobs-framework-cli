@@ -61,7 +61,7 @@ class Conf:
 
     IMAGES_TABULATION_HEADERS = {
         "shortname": "Short name",
-        "image": "Docker container image",
+        "image": "Container image URL",
     }
 
     def __init__(self, cfg_file: str):

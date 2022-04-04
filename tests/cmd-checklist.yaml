@@ -41,7 +41,7 @@
       retcode: 0
       stdout: ""
       stderr: ""
-    - cmd: ${BIN} --cfg ${CFGFILE} images | grep -q "Docker container image"
+    - cmd: ${BIN} --cfg ${CFGFILE} images | grep -q "Container image URL"
       retcode: 0
       stdout: ""
       stderr: ""

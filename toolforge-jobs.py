@@ -613,11 +613,13 @@ def op_load(conf: Conf, file: str):
 def main():
     args = parse_args()
 
-    logging_format = "%(asctime)s %(filename)s %(levelname)s: %(message)s"
+    logging_format = "%(levelname)s: %(message)s"
     if args.debug:
         logging_level = logging.DEBUG
+        logging_format = f"[%(asctime)s] [%(filename)s] {logging_format}"
     else:
         logging_level = logging.INFO
+
     logging.addLevelName(
         logging.WARNING, "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING)
     )

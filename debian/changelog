@@ -1,4 +1,4 @@
-toolforge-jobs-framework-cli (6) UNRELEASED; urgency=medium
+toolforge-jobs-framework-cli (6) buster; urgency=medium
 
   * [7347e84] tests/: refresh the checklist runner script
   * [adacda7] jobs-framework-cli: add run_ci_locally.sh script
@@ -7,8 +7,9 @@ toolforge-jobs-framework-cli (6) UNRELEASED; urgency=medium
   * [e023cc5] jobs-framework-cli: introduce list --long option
   * [d1456a2] jobs-framework-cli: rename container options to images
   * [0a70aa7] jobs-framework-cli: use timestamp in logs
+  * [862e5d0] jobs-framework-cli: remove references to Docker
 
- -- Arturo Borrero Gonzalez <arturo@debian.org>  Tue, 29 Mar 2022 19:17:08 +0200
+ -- Arturo Borrero Gonzalez <arturo@debian.org>  Mon, 04 Apr 2022 11:00:27 +0200
 
 toolforge-jobs-framework-cli (5) buster; urgency=medium
 

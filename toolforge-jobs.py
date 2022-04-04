@@ -273,8 +273,7 @@ def parse_args():
 
 def op_images(conf: Conf):
     try:
-        # TODO: URL update?
-        response = conf.session.get(conf.api_url + "/containers/")
+        response = conf.session.get(conf.api_url + "/images/")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)

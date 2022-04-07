@@ -482,7 +482,7 @@ def _show_job(conf: Conf, name: str, missing_ok: bool):
         if missing_ok:
             return None  # the job doesn't exist, but that's ok!
 
-        logging.error(f"job '{name}' does not exists")
+        logging.error(f"job '{name}' does not exist")
         sys.exit(1)
 
     try:

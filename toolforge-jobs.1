@@ -1,6 +1,6 @@
 .\" (C) Copyright 2021 Arturo Borrero Gonzalez <aborrero@wikimedia.org>
 .\"
-.TH TOOLFORGE-JOBS-FRAMEWORK 1 "May 6 2022"
+.TH TOOLFORGE-JOBS-FRAMEWORK 1 "August 7 2022"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .SH NAME
@@ -210,7 +210,7 @@ Example YAML file:
   image: tf-bullseye-std
   command: ./mycommand.sh --argument1
   wait: true
-  emails: onfishih
+  emails: onfinish
 # another normal job after the previous one finished running
 - name: anotherjob
   image: tf-bullseye-std
@@ -218,6 +218,8 @@ Example YAML file:
   emails: none
 .fi
 
+Alternatively, the \fB--job NAME\fP parameter can be used to load (and delete the old one, if it
+exists) a single job only.
 
 .SH OPTIONS
 Normal users wont need any of these options, which are mostly for Toolforge administrators, and

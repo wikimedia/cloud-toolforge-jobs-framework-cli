@@ -12,6 +12,7 @@
 #
 
 from tabulate import tabulate
+from typing import Optional
 import textwrap
 import requests
 import argparse
@@ -265,6 +266,7 @@ def parse_args():
         help="flush all jobs and load a YAML file with job definitions and run them",
     )
     loadparser.add_argument("file", help="path to YAML file to load")
+    loadparser.add_argument("--job", required=False, help="load a single job only")
 
     return parser.parse_args()
 
@@ -511,7 +513,7 @@ def op_show(conf: Conf, name):
     print(output)
 
 
-def op_delete(conf: Conf, name):
+def op_delete(conf: Conf, name: str):
     try:
         conf.session.delete(conf.api_url + f"/delete/{name}")
     except Exception as e:
@@ -548,6 +550,25 @@ def _flush_and_wait(conf: Conf):
 
     logging.error("could not load new jobs")
     logging.error(f"timed out ({WAIT_TIMEOUT} seconds) waiting for previous jobs to be flushed")
+    sys.exit(1)
+
+
+def _delete_and_wait(conf: Conf, name: str):
+    op_delete(conf, name)
+
+    curtime = starttime = time.time()
+    while curtime - starttime < WAIT_TIMEOUT:
+        logging.debug(f"waiting for job '{name}' to be gone, sleeping {WAIT_SLEEP} seconds")
+        time.sleep(WAIT_SLEEP)
+        curtime = time.time()
+
+        job = _show_job(conf, name, missing_ok=True)
+        if not job:
+            # ok!
+            return
+
+    logging.error("could not load new jobs")
+    logging.error(f"timed out ({WAIT_TIMEOUT} seconds) waiting for old job to be deleted")
     sys.exit(1)
 
 
@@ -589,7 +610,7 @@ def _load_job(conf: Conf, job: dict, n: int):
     )
 
 
-def op_load(conf: Conf, file: str):
+def op_load(conf: Conf, file: str, job_name: Optional[str]):
     try:
         with open(file) as f:
             jobslist = yaml.safe_load(f.read())
@@ -600,9 +621,18 @@ def op_load(conf: Conf, file: str):
     logging.debug(f"loaded content from YAML file '{file}':")
     logging.debug(f"{jobslist}")
 
-    # before loading new jobs, flush and wait for them to go away
-    _flush_and_wait(conf)
-    logging.debug("jobs list is confirmed to be empty, now loading new jobs")
+    if job_name:
+        # delete it
+        _delete_and_wait(conf, job_name)
+
+        jobslist = [job for job in jobslist if job["name"] == job_name]
+
+        if not jobslist:
+            logging.error(f"file '{file}' doesn't contain a job called '{job_name}'")
+    else:
+        # before loading new jobs, flush and wait for them to go away
+        _flush_and_wait(conf)
+        logging.debug("jobs list is confirmed to be empty, now loading new jobs")
 
     for n, job in enumerate(jobslist, start=1):
         _load_job(conf, job, n)
@@ -666,6 +696,6 @@ def main():
     elif args.operation == "flush":
         op_flush(conf)
     elif args.operation == "load":
-        op_load(conf, args.file)
+        op_load(conf, args.file, args.job)
 
     logging.debug("-- end of operations")

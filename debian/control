@@ -15,11 +15,7 @@ Rules-Requires-Root: no
 
 Package: toolforge-jobs-framework-cli
 Architecture: all
-Depends: python3-anyjson,
-         python3-requests,
-         python3-tabulate,
-         python3-yaml,
-         ${misc:Depends},
+Depends: ${misc:Depends},
          ${python3:Depends}
 Description: Command line interface for the Toolforge Jobs framework
  This package contains the command line interface for the Toolforge Jobs

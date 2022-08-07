@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # (C) 2021 by Arturo Borrero Gonzalez <aborrero@wikimedia.org>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -671,10 +669,3 @@ def main():
         op_load(conf, args.file)
 
     logging.debug("-- end of operations")
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        sys.exit(130)

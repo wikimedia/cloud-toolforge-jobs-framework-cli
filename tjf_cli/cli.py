@@ -26,7 +26,6 @@ import sys
 from tjf_cli.conf import Conf
 from tjf_cli.loader import calculate_changes
 
-
 # TODO: disable this for now, review later
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -81,6 +80,12 @@ def parse_args():
         action="store_true",
         help="don't store job stdout in `jobname`.out and stderr in `jobname`.err files in the "
         "user home directory",
+    )
+    runparser.add_argument(
+        "-o", "--filelog-stdout", required=False, help="location to store stdout logs for this job"
+    )
+    runparser.add_argument(
+        "-e", "--filelog-stderr", required=False, help="location to store stderr logs for this job"
     )
     runparser.add_argument(
         "--mem",
@@ -309,15 +314,17 @@ def _wait_for_job(conf: Conf, name: str):
 
 def op_run(
     conf: Conf,
-    name,
-    command,
-    schedule,
-    continuous,
-    image,
-    wait,
+    name: str,
+    command: str,
+    schedule: Optional[str],
+    continuous: bool,
+    image: str,
+    wait: bool,
     no_filelog: bool,
-    mem: str,
-    cpu: str,
+    filelog_stdout: Optional[str],
+    filelog_stderr: Optional[str],
+    mem: Optional[str],
+    cpu: Optional[str],
     emails: str,
 ):
     payload = {"name": name, "imagename": image, "cmd": command, "emails": emails}
@@ -330,6 +337,12 @@ def op_run(
     if not no_filelog:
         # the default is to request the filelog
         payload["filelog"] = "true"
+
+    if filelog_stdout:
+        payload["filelog_stdout"] = filelog_stdout
+
+    if filelog_stderr:
+        payload["filelog_stderr"] = filelog_stderr
 
     if mem:
         payload["memory"] = mem
@@ -475,6 +488,8 @@ def _load_job(conf: Conf, job: dict, n: int):
     schedule = job.get("schedule", None)
     continuous = job.get("continuous", False)
     no_filelog = job.get("no-filelog", False)
+    filelog_stdout = job.get("filelog-stdout", None)
+    filelog_stderr = job.get("filelog-stderr", None)
     mem = job.get("mem", None)
     cpu = job.get("cpu", None)
     emails = job.get("emails", "none")
@@ -493,6 +508,8 @@ def _load_job(conf: Conf, job: dict, n: int):
         image=image,
         wait=wait,
         no_filelog=no_filelog,
+        filelog_stdout=filelog_stdout,
+        filelog_stderr=filelog_stderr,
         mem=mem,
         cpu=cpu,
         emails=emails,
@@ -576,17 +593,19 @@ def main():
         op_images(conf)
     elif args.operation == "run":
         op_run(
-            conf,
-            args.name,
-            args.command,
-            args.schedule,
-            args.continuous,
-            args.image,
-            args.wait,
-            args.no_filelog,
-            args.mem,
-            args.cpu,
-            args.emails,
+            conf=conf,
+            name=args.name,
+            command=args.command,
+            schedule=args.schedule,
+            continuous=args.continuous,
+            image=args.image,
+            wait=args.wait,
+            no_filelog=args.no_filelog,
+            filelog_stdout=args.filelog_stdout,
+            filelog_stderr=args.filelog_stderr,
+            mem=args.mem,
+            cpu=args.cpu,
+            emails=args.emails,
         )
     elif args.operation == "show":
         op_show(conf, args.name)

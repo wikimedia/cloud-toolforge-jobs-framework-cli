@@ -37,6 +37,8 @@ class Conf:
         "type": "Job type:",
         "image": "Image:",
         "filelog": "File log:",
+        "filelog_stdout": "Output log:",
+        "filelog_stderr": "Error log:",
         "emails": "Emails:",
         "resources": "Resources:",
         "status_short": "Status:",

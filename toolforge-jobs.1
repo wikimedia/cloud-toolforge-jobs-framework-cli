@@ -81,6 +81,8 @@ NAME                    New job name, unique identifier. Example: "myjob"
 --command COMMAND       The command to run in the job. Example: "./mycommand.sh argone --argtwo"
 --image IMAGE           Container image shortname. Check them with the \fBcontainers\fP action. Example: "tf-bullseye-std".
 --no-filelog            Disable log storage in files in the tool home directory.
+-o, --filelog-stdout    Specify the path to store output logs
+-e, --filelog-stderr    Specify the path to store error logs
 --mem MEM               Request additional memory resource limits for the job.
 --cpu CPU               Request additional CPU resource limits for the job
 --emails OPT            Specify if you want to receive emails about events for this job. Choices are 'none', 'all', 'onfailure', 'onfinish'. The default is 'none'.
@@ -108,6 +110,12 @@ $ toolforge-jobs run mycronjob --command ./everyminute.sh --image tf-bullseye-st
 Running a normal job without logs being stored:
 $ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-std --no-filelog --emails none
 
+Running a normal job with custom log files:
+$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-std --emails none -o ./log-file.out -e ./log-file.err
+
+Running a normal job with both output and error logs stored in same file:
+$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-std --emails none --filelog-stdout ./log-file.txt --filelog-stderr ./log-file.txt
+
 Running a job with command arguments:
 $ toolforge-jobs run myjob --command "./mycommand.sh --witharguments" --image tf-bullseye-std --emails all
 
@@ -133,6 +141,10 @@ $ toolforge-jobs show myscheduledjob
 | Container: | tf-bullseye-std                                                 |
 +------------+-----------------------------------------------------------------+
 | File log:  | yes                                                             |
++------------+-----------------------------------------------------------------+
+| Output log:| /data/project/my-user/myscheduledjob.out                        |
++------------+-----------------------------------------------------------------+
+| Error log: | /data/project/my-user/myscheduledjob.err                        |
 +------------+-----------------------------------------------------------------+
 | Emails:    | none                                                            |
 +------------+-----------------------------------------------------------------+
@@ -166,11 +178,11 @@ Example, long listing:
 
 .nf
 $ toolforge-jobs list -l
-Job name:       Command:                 Job type:            Container:        File log:  Emails:   Resources:   Status:
---------------  -----------------------  -------------------  ---------------   ---------  -------   ----------   ---------------------------
-myscheduledjob  ./read-dumps.sh          schedule: * * * * *  tf-bullseye-std   yes        none      default      Last schedule time: 2021-06-30T10:26:00Z
-alwaysrunning   ./myendlesscommand.sh    continuous           tf-bullseye-std   no         all       default      Running
-myjob           ./mycommand.sh --debug   normal               tf-bullseye-std   yes        onfinish  default      Completed
+Job name:       Command:                 Job type:            Container:        File log:  Output log:                               Error log:                                Emails:   Resources:  Status:
+--------------  -----------------------  -------------------  ---------------   ---------  ----------------------------------------  ----------------------------------------  -------   ----------  ----------------------------------------
+myscheduledjob  ./read-dumps.sh          schedule: * * * * *  tf-bullseye-std   yes        /data/project/my-user/myscheduledjob.out  /data/project/my-user/myscheduledjob.err  none      default     Last schedule time: 2021-06-30T10:26:00Z
+alwaysrunning   ./myendlesscommand.sh    continuous           tf-bullseye-std   no         /dev/null                                 /dev/null                                 all       default     Running
+myjob           ./mycommand.sh --debug   normal               tf-bullseye-std   yes        /data/project/my-user/custom.out          /data/project/my-user/custom.err          onfinish  default     Completed
 .fi
 
 .TP
@@ -203,12 +215,16 @@ Example YAML file:
 - image: tf-bullseye-std
   name: endlessjob
   command: ./dumps-daemon.py --endless
+  filelog-stdout: /data/project/user/custom.out
+  filelog-stderr: /data/project/user/custom.err
   continuous: true
   emails: all
 # wait for this normal job before loading the next
 - name: myjob
   image: tf-bullseye-std
   command: ./mycommand.sh --argument1
+  filelog-stdout: /data/project/user/custom.log
+  filelog-stderr: /data/project/user/custom.log
   wait: true
   emails: onfinish
 # another normal job after the previous one finished running

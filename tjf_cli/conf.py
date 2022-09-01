@@ -41,6 +41,7 @@ class Conf:
         "filelog_stderr": "Error log:",
         "emails": "Emails:",
         "resources": "Resources:",
+        "retry": "Retry:",
         "status_short": "Status:",
         "status_long": "Hints:",
     }

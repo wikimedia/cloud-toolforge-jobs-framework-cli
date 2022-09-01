@@ -73,7 +73,7 @@ $ toolforge-jobs images
 .fi
 
 .TP
-.B run NAME --command COMMAND --image IMAGE --no-filelog --mem MEM --cpu CPU [--schedule SCHEDULE | --continuous | --wait]
+.B run NAME --command COMMAND --image IMAGE --no-filelog --mem MEM --cpu CPU [--schedule SCHEDULE | --continuous | --wait] --retry
 Run a new job of your own in Toolforge. Action specific parameters:
 
 .nf
@@ -90,6 +90,7 @@ NAME                    New job name, unique identifier. Example: "myjob"
 --schedule SCHEDULE     If the job is a schedule, cron time specification. Example: "1 * * * *".
 --continuous            Run a continuous job.
 --wait                  Run a normal job and wait for completition.
+--retry                 Number of times to retry a failed job. This doesn't have any effect when --continuous is set. (range from 0 to 5)
 .fi
 
 Some complete examples:
@@ -106,6 +107,9 @@ $ toolforge-jobs run myalwaysrunningjob --command ./myendlesscommand.sh --image 
 
 Running a scheduled job:
 $ toolforge-jobs run mycronjob --command ./everyminute.sh --image tf-bullseye-std --schedule "1 * * * *"
+
+Running a scheduled job with --retry policy set:
+$ toolforge-jobs run mycronjob --command ./everyminute.sh --image tf-bullseye-std --schedule "1 * * * *" --retry
 
 Running a normal job without logs being stored:
 $ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-std --no-filelog --emails none
@@ -150,6 +154,8 @@ $ toolforge-jobs show myscheduledjob
 +------------+-----------------------------------------------------------------+
 | Resources: | mem: 10Mi, cpu: 100                                             |
 +------------+-----------------------------------------------------------------+
+| Retry:     | yes: 3 time(s)                                                  |
++------------+-----------------------------------------------------------------+
 | Status:    | Last schedule time: 2021-06-30T10:26:00Z                        |
 +------------+-----------------------------------------------------------------+
 | Hints:     | Last run at 2021-06-30T10:26:08Z. Pod in 'Pending' phase. State |
@@ -178,11 +184,11 @@ Example, long listing:
 
 .nf
 $ toolforge-jobs list -l
-Job name:       Command:                 Job type:            Container:        File log:  Output log:                               Error log:                                Emails:   Resources:  Status:
---------------  -----------------------  -------------------  ---------------   ---------  ----------------------------------------  ----------------------------------------  -------   ----------  ----------------------------------------
-myscheduledjob  ./read-dumps.sh          schedule: * * * * *  tf-bullseye-std   yes        /data/project/my-user/myscheduledjob.out  /data/project/my-user/myscheduledjob.err  none      default     Last schedule time: 2021-06-30T10:26:00Z
-alwaysrunning   ./myendlesscommand.sh    continuous           tf-bullseye-std   no         /dev/null                                 /dev/null                                 all       default     Running
-myjob           ./mycommand.sh --debug   normal               tf-bullseye-std   yes        /data/project/my-user/custom.out          /data/project/my-user/custom.err          onfinish  default     Completed
+Job name:       Command:                 Job type:            Container:        File log:  Output log:                               Error log:                                Emails:   Resources:  Retry:           Status:
+--------------  -----------------------  -------------------  ---------------   ---------  ----------------------------------------  ----------------------------------------  -------   ----------  --------------   ----------------------------------------
+myscheduledjob  ./read-dumps.sh          schedule: * * * * *  tf-bullseye-std   yes        /data/project/my-user/myscheduledjob.out  /data/project/my-user/myscheduledjob.err  none      default     yes: 5 time(s)   Last schedule time: 2021-06-30T10:26:00Z
+alwaysrunning   ./myendlesscommand.sh    continuous           tf-bullseye-std   no         /dev/null                                 /dev/null                                 all       default     no               Running
+myjob           ./mycommand.sh --debug   normal               tf-bullseye-std   yes        /data/project/my-user/custom.out          /data/project/my-user/custom.err          onfinish  default     yes: 1 time(s)   Completed
 .fi
 
 .TP
@@ -210,6 +216,7 @@ Example YAML file:
   image: tf-bullseye-std
   no-filelog: true
   schedule: "* * * * *"
+  retry: 5
   emails: onfailure
 # a continuous job
 - image: tf-bullseye-std
@@ -225,6 +232,7 @@ Example YAML file:
   command: ./mycommand.sh --argument1
   filelog-stdout: /data/project/user/custom.log
   filelog-stderr: /data/project/user/custom.log
+  retry: 2
   wait: true
   emails: onfinish
 # another normal job after the previous one finished running

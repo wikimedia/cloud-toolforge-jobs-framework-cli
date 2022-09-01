@@ -88,6 +88,14 @@ def parse_args():
         "-e", "--filelog-stderr", required=False, help="location to store stderr logs for this job"
     )
     runparser.add_argument(
+        "--retry",
+        required=False,
+        choices=[0, 1, 2, 3, 4, 5],
+        default=0,
+        type=int,
+        help="specify the retry policy of failed jobs.",
+    )
+    runparser.add_argument(
         "--mem",
         required=False,
         help="specify additional memory limit required for this job",
@@ -193,6 +201,7 @@ def op_images(conf: Conf):
 def job_prepare_for_output(conf: Conf, job, long_listing=False, supress_hints=True):
     schedule = job.get("schedule", None)
     cont = job.get("continuous", None)
+    retry = job.get("retry")
     if schedule is not None:
         job["type"] = f"schedule: {schedule}"
         job.pop("schedule", None)
@@ -207,6 +216,11 @@ def job_prepare_for_output(conf: Conf, job, long_listing=False, supress_hints=Tr
         job["filelog"] = "yes"
     else:
         job["filelog"] = "no"
+
+    if retry == 0:
+        job["retry"] = "no"
+    else:
+        job["retry"] = f"yes: {retry} time(s)"
 
     mem = job.pop("memory", "default")
     cpu = job.pop("cpu", "default")
@@ -325,9 +339,10 @@ def op_run(
     filelog_stderr: Optional[str],
     mem: Optional[str],
     cpu: Optional[str],
+    retry: int,
     emails: str,
 ):
-    payload = {"name": name, "imagename": image, "cmd": command, "emails": emails}
+    payload = {"name": name, "imagename": image, "cmd": command, "emails": emails, "retry": retry}
 
     if continuous:
         payload["continuous"] = "true"
@@ -490,6 +505,7 @@ def _load_job(conf: Conf, job: dict, n: int):
     no_filelog = job.get("no-filelog", False)
     filelog_stdout = job.get("filelog-stdout", None)
     filelog_stderr = job.get("filelog-stderr", None)
+    retry = job.get("retry", 0)
     mem = job.get("mem", None)
     cpu = job.get("cpu", None)
     emails = job.get("emails", "none")
@@ -510,6 +526,7 @@ def _load_job(conf: Conf, job: dict, n: int):
         no_filelog=no_filelog,
         filelog_stdout=filelog_stdout,
         filelog_stderr=filelog_stderr,
+        retry=retry,
         mem=mem,
         cpu=cpu,
         emails=emails,
@@ -603,6 +620,7 @@ def main():
             no_filelog=args.no_filelog,
             filelog_stdout=args.filelog_stdout,
             filelog_stderr=args.filelog_stderr,
+            retry=args.retry,
             mem=args.mem,
             cpu=args.cpu,
             emails=args.emails,

@@ -79,6 +79,7 @@
             && echo "$response" | egrep -q "Resources:"[[:space:]]*"\| default" \
             && echo "$response" | egrep -q "Output log:"[[:space:]]*"\| *${NORMALJOBNAME}.out" \
             && echo "$response" | egrep -q "Error log:"[[:space:]]*"\| *${NORMALJOBNAME}.err" \
+            && echo "$response" | egrep -q "Retry:"[[:space:]]*"\| no" \
             && echo "$response" | egrep -q "Status:" \
             && echo "$response" | egrep -q "Hints:" \
             && echo "$response" | egrep -q "Emails:"
@@ -91,15 +92,17 @@
     # predictable table headers
     - cmd: |
             ${BIN} --cfg ${CFGFILE} list -l | grep "Job name:" | grep "Command:" \
-            | grep "Job type:" | grep "Image:" | grep "File log:" | grep "Resources:" \
-            | grep "Output log:" | grep "Error log:" | grep "Status:" | grep -q "Emails:"
+            | grep "Job type:" | grep "Image:" | grep "File log:" \
+            | grep "Output log:" | grep "Error log:" | grep "Status:" | grep "Emails:" \
+            | grep "Retry:" | grep -q "Resources:"
       retcode: 0
     # predictable job list output
     - cmd: |
             ${BIN} --cfg ${CFGFILE} list --long | grep ${NORMALJOBNAME} \
             | grep "./${TESTCMD} --withargs" | grep "normal" | grep ${CONTAINER} \
             | egrep ""[[:space:]]"yes"[[:space:]]"" | grep ${NORMALJOBNAME}.out \
-            | grep ${NORMALJOBNAME}.err | grep default | egrep ""[[:space:]]"none"[[:space:]]""
+            | grep ${NORMALJOBNAME}.err | grep default | egrep ""[[:space:]]"none"[[:space:]]"" \
+            | egrep ""[[:space:]]"no"[[:space:]]"" | grep default
       retcode: 0
 
 - name: list normal job (short)
@@ -112,6 +115,43 @@
       retcode: 0
 
 - name: normal job can be deleted
+  tests:
+    - cmd: ${BIN} --cfg ${CFGFILE} delete ${NORMALJOBNAME}
+      retcode: 0
+    - cmd: sleep ${SLEEP}
+    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | grep ERROR | grep -q "job '${NORMALJOBNAME}' does not exist"
+      retcode: 0
+
+- name: run retried job with retry not within acceptable values should fail
+  tests:
+    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --retry 6
+      retcode: 2
+      stdout: ""
+    - cmd: ${BIN} --cfg ${CFGFILE} list | grep "Job name:" | wc -l
+      retcode: 0
+      stdout: "0"
+      stderr: ""
+
+- name: run retried job
+  tests:
+    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --retry 3
+      retcode: 0
+
+- name: show retried job (check the "Retry" row)
+  tests:
+    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | egrep -q "Retry:"[[:space:]]*"\| yes"[[:graph:]]" 3 time\(s\)"
+      retcode: 0
+
+- name: list retried job (long)(check the "Retry" column)
+  tests:
+    # predictable table headers
+    - cmd: ${BIN} --cfg ${CFGFILE} list -l | grep -q "Retry:"
+      retcode: 0
+    # predictable job list output
+    - cmd: ${BIN} --cfg ${CFGFILE} list --long | egrep -q "yes"[[:graph:]]" 3 time\(s\)"
+      retcode: 0
+
+- name: retried job can be deleted
   tests:
     - cmd: ${BIN} --cfg ${CFGFILE} delete ${NORMALJOBNAME}
       retcode: 0
@@ -223,6 +263,17 @@
       retcode: 2
     # cleanup
     - cmd: ${BIN} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}5
+ 
+- name: normal job with --no-filelog doesn't produce any log
+  tests:
+    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}3 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --no-filelog
+      retcode: 0
+    - cmd: ls ${TOOLHOME}/${NORMALJOBNAME}3.out
+      retcode: 2
+    - cmd: ls ${TOOLHOME}/${NORMALJOBNAME}3.err
+      retcode: 2
+    # cleanup
+    - cmd: ${BIN} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}3
 
 - name: run 3 jobs, they are all listed together
   tests:
@@ -257,6 +308,7 @@
              image: ${CONTAINER}
              command: ./${TESTCMD} --withargs
              wait: true
+             retry: 3
              emails: all
            EOF
       retcode: 0

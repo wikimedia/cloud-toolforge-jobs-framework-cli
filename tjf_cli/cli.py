@@ -12,19 +12,19 @@
 #
 
 from tabulate import tabulate
-from typing import Optional
+from typing import Optional, Set
 import textwrap
-import requests
 import argparse
 import getpass
 import urllib3
 import logging
-import socket
 import time
 import json
 import yaml
 import sys
-import os
+
+from tjf_cli.conf import Conf
+from tjf_cli.loader import calculate_changes
 
 
 # TODO: disable this for now, review later
@@ -33,121 +33,6 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # for --wait: 5 minutes timeout, check every 5 seconds
 WAIT_TIMEOUT = 60 * 5
 WAIT_SLEEP = 5
-
-
-class Conf:
-    """
-    Class that represents the configuration for this CLI session
-    """
-
-    JOB_TABULATION_HEADERS_SHORT = {
-        "name": "Job name:",
-        "type": "Job type:",
-        "status_short": "Status:",
-    }
-
-    JOB_TABULATION_HEADERS_LONG = {
-        "name": "Job name:",
-        "cmd": "Command:",
-        "type": "Job type:",
-        "image": "Image:",
-        "filelog": "File log:",
-        "emails": "Emails:",
-        "resources": "Resources:",
-        "status_short": "Status:",
-        "status_long": "Hints:",
-    }
-
-    IMAGES_TABULATION_HEADERS = {
-        "shortname": "Short name",
-        "image": "Container image URL",
-    }
-
-    def __init__(self, cfg_file: str):
-        """Constructor"""
-
-        try:
-            with open(cfg_file) as f:
-                cfg = yaml.safe_load(f.read())
-        except Exception as e:
-            logging.error(
-                f"couldn't read config file '{cfg_file}': {e}. Contact a Toolforge admin."
-            )
-            sys.exit(1)
-
-        try:
-            self.api_url = cfg.get("api_url")
-        except KeyError as e:
-            logging.error(
-                f"missing key '{str(e)}' in config file '{cfg_file}'. Contact a Toolforge admin."
-            )
-            sys.exit(1)
-
-        kubeconfig = cfg.get("kubeconfig", "~/.kube/config")
-        customhdr = cfg.get("customhdr", None)
-        customaddr = cfg.get("customaddr", None)
-        customfqdn = cfg.get("customfqdn", None)
-        self.kubeconfigfile = os.path.expanduser(kubeconfig)
-
-        try:
-            with open(self.kubeconfigfile) as f:
-                self.k8sconf = yaml.safe_load(f.read())
-        except Exception as e:
-            logging.error(
-                f"couldn't read kubeconfig file '{self.kubeconfigfile}': {e}. "
-                "Contact a Toolforge admin."
-            )
-            sys.exit(1)
-
-        logging.debug(f"loaded kubeconfig file '{self.kubeconfigfile}'")
-
-        self.session = requests.Session()
-        try:
-            self.context = self._find_cfg_obj("contexts", self.k8sconf["current-context"])
-            self.cluster = self._find_cfg_obj("clusters", self.context["cluster"])
-            self.server = self.cluster["server"]
-            self.namespace = self.context["namespace"]
-            self.user = self._find_cfg_obj("users", self.context["user"])
-            self.session.cert = (self.user["client-certificate"], self.user["client-key"])
-        except KeyError as e:
-            logging.error(
-                "couldn't build session configuration from file "
-                f"'{self.kubeconfigfile}': missing key {e}. Contact a Toolforge admin."
-            )
-            sys.exit(1)
-        except Exception as e:
-            logging.error(
-                "couldn't build session configuration from file "
-                f"'{self.kubeconfigfile}': {e}. Contact a Toolforge admin."
-            )
-            sys.exit(1)
-
-        self._configure_user_agent()
-
-        if customhdr is not None:
-            self.session.headers.update(customhdr)
-
-        # don't verify server-side TLS for now
-        self.session.verify = False
-
-        if customaddr is not None and customfqdn is not None:
-            from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
-
-            self.session.mount(f"https://{customfqdn}", ForcedIPHTTPSAdapter(dest_ip=customaddr))
-
-    def _configure_user_agent(self):
-        """Configure User-Agent header."""
-        host = socket.gethostname()
-        pyrequest_ua = requests.utils.default_user_agent()
-        ua_str = f"jobs-framework-cli {self.namespace}@{host} {pyrequest_ua}"
-        self.session.headers.update({"User-Agent": ua_str})
-
-    def _find_cfg_obj(self, kind, name):
-        """Lookup a named object in our config."""
-        for obj in self.k8sconf[kind]:
-            if obj["name"] == name:
-                return obj[kind[:-1]]
-        raise KeyError(f"key '{name}' not found in '{kind}' section of config")
 
 
 def parse_args():
@@ -556,22 +441,23 @@ def _flush_and_wait(conf: Conf):
     sys.exit(1)
 
 
-def _delete_and_wait(conf: Conf, name: str):
-    op_delete(conf, name)
+def _delete_and_wait(conf: Conf, names: Set[str]):
+    for name in names:
+        op_delete(conf, name)
 
     curtime = starttime = time.time()
     while curtime - starttime < WAIT_TIMEOUT:
-        logging.debug(f"waiting for job '{name}' to be gone, sleeping {WAIT_SLEEP} seconds")
+        logging.debug(f"waiting for {len(names)} job(s) to be gone, sleeping {WAIT_SLEEP} seconds")
         time.sleep(WAIT_SLEEP)
         curtime = time.time()
 
-        job = _show_job(conf, name, missing_ok=True)
-        if not job:
+        jobs = _list_jobs(conf)
+        if not any([job for job in jobs if job["name"] in names]):
             # ok!
             return
 
     logging.error("could not load new jobs")
-    logging.error(f"timed out ({WAIT_TIMEOUT} seconds) waiting for old job to be deleted")
+    logging.error(f"timed out ({WAIT_TIMEOUT} seconds) waiting for old jobs to be deleted")
     sys.exit(1)
 
 
@@ -624,20 +510,22 @@ def op_load(conf: Conf, file: str, job_name: Optional[str]):
     logging.debug(f"loaded content from YAML file '{file}':")
     logging.debug(f"{jobslist}")
 
-    if job_name:
-        # delete it
-        _delete_and_wait(conf, job_name)
+    changes = calculate_changes(
+        conf, jobslist, (lambda name: name == job_name) if job_name else None
+    )
 
-        jobslist = [job for job in jobslist if job["name"] == job_name]
-
-        if not jobslist:
-            logging.error(f"file '{file}' doesn't contain a job called '{job_name}'")
-    else:
-        # before loading new jobs, flush and wait for them to go away
-        _flush_and_wait(conf)
-        logging.debug("jobs list is confirmed to be empty, now loading new jobs")
+    if len(changes.delete) > 0 or len(changes.modify) > 0:
+        _delete_and_wait(conf, {*changes.delete, *changes.modify})
 
     for n, job in enumerate(jobslist, start=1):
+        if "name" not in job:
+            logging.error(f"Unable to load job number {n}. Missing configuration parameter name")
+            sys.exit(1)
+
+        name = job["name"]
+        if name not in changes.add and name not in changes.modify:
+            continue
+
         _load_job(conf, job, n)
 
 

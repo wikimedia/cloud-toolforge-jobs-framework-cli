@@ -268,6 +268,9 @@ def parse_args():
     loadparser.add_argument("file", help="path to YAML file to load")
     loadparser.add_argument("--job", required=False, help="load a single job only")
 
+    restartparser = subparser.add_parser("restart", help="restarts a running job")
+    restartparser.add_argument("name", help="job name")
+
     return parser.parse_args()
 
 
@@ -638,6 +641,16 @@ def op_load(conf: Conf, file: str, job_name: Optional[str]):
         _load_job(conf, job, n)
 
 
+def op_restart(conf: Conf, name: str):
+    try:
+        conf.session.post(conf.api_url + f"/restart/{name}")
+    except Exception as e:
+        logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
+        sys.exit(1)
+
+    logging.debug("job was restarted")
+
+
 def main():
     args = parse_args()
 
@@ -697,5 +710,7 @@ def main():
         op_flush(conf)
     elif args.operation == "load":
         op_load(conf, args.file, args.job)
+    elif args.operation == "restart":
+        op_restart(conf, args.name)
 
     logging.debug("-- end of operations")

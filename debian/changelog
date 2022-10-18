@@ -1,3 +1,20 @@
+toolforge-jobs-framework-cli (8) buster; urgency=medium
+
+  [ JJMC89 ]
+  * [897c4af] fix typo in error message when attempting to show a nonexistent job
+
+  [ Klein Muçi ]
+  * [b47b586] Fix typo
+
+  [ Taavi Väänänen ]
+  * [124dcdd] Set up as a proper Python package
+  * [6e9bf40] load: Support loading a single job only
+  * [19d57ce] Add restart subcommand
+  * [ae5ce81] load: Don't change already running jobs
+  * [e7a64ce] d/rules: Don't run pytest when building the package
+
+ -- Taavi Väänänen <hi@taavi.wtf>  Tue, 18 Oct 2022 14:42:35 +0300
+
 toolforge-jobs-framework-cli (7) buster; urgency=medium
 
   * [8677d69] images: update API endpoint URL

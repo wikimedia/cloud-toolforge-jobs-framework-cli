@@ -6,7 +6,7 @@
       CUSTOMFQDN: jobs.svc.toolsbeta.eqiad1.wikimedia.cloud
       CFGFILE: ./test-cfg.yaml
       SLEEP: "2"
-      BIN: ./toolforge-jobs.py
+      BIN: python3 -c "from tjf_cli.cli import main; main()"
       TOOLHOME: /data/project/test
       CONTAINER: tf-bullseye-std
       NORMALJOBNAME: test-job
@@ -57,41 +57,45 @@
            #!/bin/sh
            echo stdout \$1
            echo stderr >&2
+           sleep 20 # this is a simple script and exits faster than we can test it. this command slows it down
            EOF
       retcode: 0
       stderr: ""
     - cmd: chmod a+x ${TOOLHOME}/${TESTCMD}
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --wait
+    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER}
       retcode: 0
 
 - name: show normal job
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | egrep -q "Job name:"[[:space:]]*"| ${NORMALJOBNAME}"
+    - cmd: |
+            response=$(${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME})
+            echo "$response" | egrep -q "Job name:"[[:space:]]*"\| ${NORMALJOBNAME}" \
+            && echo "$response" | egrep -q "Command:"[[:space:]]*"\| ./${TESTCMD} --withargs" \
+            && echo "$response" | egrep -q "Job type:"[[:space:]]*"\| normal" \
+            && echo "$response" | egrep -q "Image:"[[:space:]]*"\| ${CONTAINER}" \
+            && echo "$response" | egrep -q "File log:"[[:space:]]*"\| yes" \
+            && echo "$response" | egrep -q "Resources:"[[:space:]]*"\| default" \
+            && echo "$response" | egrep -q "Status:" \
+            && echo "$response" | egrep -q "Hints:" \
+            && echo "$response" | egrep -q "Emails:"
       retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | egrep -q "Command:"[[:space:]]*"| ./${TESTCMD} --withargs"
-      retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | egrep -q "Job type:"[[:space:]]*"| normal"
-      retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | egrep -q "Container:"[[:space:]]*"| ${CONTAINER}"
-      retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | egrep -q "File log:"[[:space:]]*"| yes"
-      retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | egrep -q "Resources:"[[:space:]]*"| default"
-      retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | egrep -q "Status:"
-      retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | egrep -q "Hints:"
-      retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | egrep -q "Emails:"
-      retcode: 0
+      stdout: ""
+      stderr: ""
 
 - name: list normal job (long)
   tests:
     # predictable table headers
-    - cmd: ${BIN} --cfg ${CFGFILE} list -l | grep "Job name:" | grep "Command:" | grep "Job type:" | grep "Image:" | grep "File log:" | grep "Resources:" | grep "Status:" | grep -q "Emails:"
+    - cmd: |
+            ${BIN} --cfg ${CFGFILE} list -l | grep "Job name:" | grep "Command:" \
+            | grep "Job type:" | grep "Image:" | grep "File log:" | grep "Resources:" \
+            | grep "Status:" | grep -q "Emails:"
       retcode: 0
     # predictable job list output
-    - cmd: ${BIN} --cfg ${CFGFILE} list --long | grep ${NORMALJOBNAME} | grep "./${TESTCMD} --withargs" | grep "normal" | grep ${CONTAINER} | grep yes | grep -q default
+    - cmd: |
+            ${BIN} --cfg ${CFGFILE} list --long | grep ${NORMALJOBNAME} \
+            | grep "./${TESTCMD} --withargs" | grep "normal" | grep ${CONTAINER} \
+            | egrep ""[[:space:]]"yes"[[:space:]]"" | grep default \
+            | egrep ""[[:space:]]"none"[[:space:]]""
       retcode: 0
 
 - name: list normal job (short)

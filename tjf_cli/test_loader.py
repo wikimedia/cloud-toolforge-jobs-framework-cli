@@ -23,8 +23,6 @@ SIMPLE_TEST_JOB_API = {
     "name": "test-job",
     "cmd": "./myothercommand.py -v",
     "image": "tf-bullseye-std",
-    "user": "majavah-test",
-    "namespace": "tool-majavah-test",
     "filelog": "True",
     "status_short": "Running",
     "status_long": (

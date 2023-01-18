@@ -75,6 +75,22 @@ def merge(first: Dict, second: Dict, unset=None) -> Dict:
         [merge(SIMPLE_TEST_JOB, {"no-filelog": False}), SIMPLE_TEST_JOB_API, True],
         [merge(SIMPLE_TEST_JOB, {"no-filelog": True}), SIMPLE_TEST_JOB_API, False],
         [SIMPLE_TEST_JOB, merge(SIMPLE_TEST_JOB_API, {"filelog": "False"}), False],
+        # filelog_stdout
+        [
+            merge(SIMPLE_TEST_JOB, {"filelog-stdout": "xyz"}),
+            merge(SIMPLE_TEST_JOB_API, {"filelog_stdout": "xyz"}),
+            True,
+        ],
+        [merge(SIMPLE_TEST_JOB, {"filelog-stdout": "xyz"}), SIMPLE_TEST_JOB_API, False],
+        [SIMPLE_TEST_JOB, merge(SIMPLE_TEST_JOB_API, {"filelog_stdout": "xyz"}), False],
+        # filelog_stderr
+        [
+            merge(SIMPLE_TEST_JOB, {"filelog-stderr": "xyz"}),
+            merge(SIMPLE_TEST_JOB_API, {"filelog_stderr": "xyz"}),
+            True,
+        ],
+        [merge(SIMPLE_TEST_JOB, {"filelog-stderr": "xyz"}), SIMPLE_TEST_JOB_API, False],
+        [SIMPLE_TEST_JOB, merge(SIMPLE_TEST_JOB_API, {"filelog_stderr": "xyz"}), False],
     ],
 )
 def test_jobs_are_same(config: Dict, api: Dict, expected: bool):

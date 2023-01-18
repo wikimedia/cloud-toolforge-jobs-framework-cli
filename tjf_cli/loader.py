@@ -24,13 +24,23 @@ class LoadChanges:
 def jobs_are_same(job_config: Dict, api_obj: Dict) -> bool:
     """Determines if a job api object matches its configuration."""
 
-    # some renames to make things easier
+    # TODO: some renames to make things easier. See also T327280
     api_obj["command"] = api_obj["cmd"]
     api_obj["memory"] = api_obj.get("mem", None)
+    api_obj["filelog-stdout"] = api_obj.get("filelog_stdout", None)
+    api_obj["filelog-stderr"] = api_obj.get("filelog_stderr", None)
 
     # TODO: explicitely setting default CPU/memory should not count as a difference
-
-    for key in ["command", "schedule", "continuous", "image", "mem", "cpu"]:
+    for key in [
+        "command",
+        "schedule",
+        "continuous",
+        "image",
+        "mem",
+        "cpu",
+        "filelog-stdout",
+        "filelog-stderr",
+    ]:
         if api_obj.get(key, None) != job_config.get(key, None):
             LOGGER.debug(
                 "currently existing job %s has different '%s' than the definition",
@@ -46,7 +56,7 @@ def jobs_are_same(job_config: Dict, api_obj: Dict) -> bool:
         )
         return False
 
-    # TODO: make the api emit proper json booleans
+    # TODO: make the api emit proper json booleans, See also T327280
     filelog_api = api_obj.get("filelog") in (True, "True")
     filelog_config = not job_config.get("no-filelog", False)
     if filelog_config != filelog_api:

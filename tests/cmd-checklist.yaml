@@ -1,13 +1,13 @@
 ---
 - envvars:
-    - KUBECONFIG: /data/project/test/.kube/config
+    - KUBECONFIG: /data/project/tf-test/.kube/config
       CUSTOMURL: https://localhost:30001/api/v1
       CUSTOMADDR: 127.0.0.1
       CUSTOMFQDN: jobs.svc.toolsbeta.eqiad1.wikimedia.cloud
       CFGFILE: ./test-cfg.yaml
       SLEEP: "2"
       BIN: python3 -c "from tjf_cli.cli import main; main()"
-      TOOLHOME: /data/project/test
+      TOOLHOME: /data/project/tf-test
       CONTAINER: tf-bullseye-std
       NORMALJOBNAME: test-job
       TESTCMD: test-cmd.sh

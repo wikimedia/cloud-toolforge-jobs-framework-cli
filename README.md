@@ -47,5 +47,12 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 Please make sure to update tests as appropriate.
 
+## Development
+
+You need a local kubernetes cluster with a fake Toolforge installed to it. There are several ways
+of doing that. The author of this README recommends the lima-kilo project.
+
+Follow docs at https://gitlab.wikimedia.org/cloud/toolforge/lima-kilo
+
 ## License
 [GPLv3](https://choosealicense.com/licenses/gpl-3.0/)

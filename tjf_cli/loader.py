@@ -13,6 +13,23 @@ from tjf_cli.conf import Conf
 
 LOGGER = getLogger(__name__)
 
+# TODO: perhaps this could be extracted from argparse?
+KNOWN_YAML_KEYS = [
+    "name",
+    "command",
+    "schedule",
+    "continuous",
+    "image",
+    "mem",
+    "cpu",
+    "retry",
+    "emails",
+    "wait",
+    "no-filelog",
+    "filelog-stdout",
+    "filelog-stderr",
+]
+
 
 @dataclass
 class LoadChanges:
@@ -31,16 +48,9 @@ def jobs_are_same(job_config: Dict, api_obj: Dict) -> bool:
     api_obj["filelog-stderr"] = api_obj.get("filelog_stderr", None)
 
     # TODO: explicitely setting default CPU/memory should not count as a difference
-    for key in [
-        "command",
-        "schedule",
-        "continuous",
-        "image",
-        "mem",
-        "cpu",
-        "filelog-stdout",
-        "filelog-stderr",
-    ]:
+    dont_evaluate_here = ["name", "emails", "no-filelog", "wait"]
+    keys = [k for k in KNOWN_YAML_KEYS if k not in dont_evaluate_here]
+    for key in keys:
         if api_obj.get(key, None) != job_config.get(key, None):
             LOGGER.debug(
                 "currently existing job %s has different '%s' than the definition",
@@ -73,6 +83,11 @@ def jobs_are_same(job_config: Dict, api_obj: Dict) -> bool:
 def calculate_changes(
     conf: Conf, configured_job_data: Dict, filter: Optional[Callable[[str], bool]]
 ) -> LoadChanges:
+    for job in configured_job_data:
+        for key in job:
+            if key not in KNOWN_YAML_KEYS:
+                LOGGER.warning(f"Unknown key '{key}' in job '{job['name']}' definition")
+
     wanted_jobs = {
         job["name"]: job for job in configured_job_data if not filter or filter(job["name"])
     }

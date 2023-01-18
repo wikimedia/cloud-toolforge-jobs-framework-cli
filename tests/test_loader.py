@@ -98,20 +98,34 @@ def test_jobs_are_same(config: Dict, api: Dict, expected: bool):
 
 
 @pytest.mark.parametrize(
-    "jobs_data,filter,add,modify,delete",
+    "jobs_data,filter,add,modify,delete,yaml_warning",
     [
         # simple cases
-        [[], None, set(), set(), {"test-job"}],
-        [[SIMPLE_TEST_JOB], None, set(), set(), set()],
+        [[], None, set(), set(), {"test-job"}, False],
+        [[SIMPLE_TEST_JOB], None, set(), set(), set(), False],
         # job data changes
-        [[merge(SIMPLE_TEST_JOB, {"mem": "2Gi"})], None, set(), {"test-job"}, set()],
+        [[merge(SIMPLE_TEST_JOB, {"mem": "2Gi"})], None, set(), {"test-job"}, set(), False],
         # rename
-        [[merge(SIMPLE_TEST_JOB, {"name": "foobar"})], None, {"foobar"}, set(), {"test-job"}],
+        [
+            [merge(SIMPLE_TEST_JOB, {"name": "foobar"})],
+            None,
+            {"foobar"},
+            set(),
+            {"test-job"},
+            False,
+        ],
         # configured jobs do not match filter
-        [[SIMPLE_TEST_JOB], lambda s: False, set(), set(), set()],
+        [[SIMPLE_TEST_JOB], lambda s: False, set(), set(), set(), False],
         # filter set and matches
-        [[SIMPLE_TEST_JOB], lambda s: True, set(), set(), set()],
-        [[merge(SIMPLE_TEST_JOB, {"mem": "2Gi"})], lambda s: True, set(), {"test-job"}, set()],
+        [[SIMPLE_TEST_JOB], lambda s: True, set(), set(), set(), False],
+        [
+            [merge(SIMPLE_TEST_JOB, {"mem": "2Gi"})],
+            lambda s: True,
+            set(),
+            {"test-job"},
+            set(),
+            False,
+        ],
         # filter and rename
         [
             [merge(SIMPLE_TEST_JOB, {"name": "foobar"})],
@@ -119,6 +133,7 @@ def test_jobs_are_same(config: Dict, api: Dict, expected: bool):
             {"foobar"},
             set(),
             set(),
+            False,
         ],
         [
             [merge(SIMPLE_TEST_JOB, {"name": "foobar"})],
@@ -126,19 +141,25 @@ def test_jobs_are_same(config: Dict, api: Dict, expected: bool):
             set(),
             set(),
             {"test-job"},
+            False,
         ],
+        # unknown yaml keys
+        [[merge(SIMPLE_TEST_JOB, {"xyz": "xyz"})], None, set(), set(), set(), True],
     ],
 )
 def test_calculate_changes(
+    caplog,
     mock_conf: Conf,
     jobs_data: Dict,
     filter: Optional[Callable[[str], bool]],
     add: Set[str],
     modify: Set[str],
     delete: Set[str],
+    yaml_warning,
 ):
     result = calculate_changes(mock_conf, jobs_data, filter)
 
     assert result.add == add
     assert result.modify == modify
     assert result.delete == delete
+    assert yaml_warning == ("Unknown key" in caplog.text)

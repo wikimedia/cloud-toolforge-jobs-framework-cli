@@ -15,14 +15,15 @@ from tjf_cli.loader import calculate_changes, jobs_are_same
 SIMPLE_TEST_JOB = {
     "name": "test-job",
     "command": "./myothercommand.py -v",
-    "image": "tf-bullseye-std",
+    "image": "bullseye",
     "emails": "none",
 }
 
 SIMPLE_TEST_JOB_API = {
     "name": "test-job",
     "cmd": "./myothercommand.py -v",
-    "image": "tf-bullseye-std",
+    "image": "bullseye",
+    "image_state": "stable",
     "filelog": "True",
     "status_short": "Running",
     "status_long": (

@@ -235,6 +235,9 @@ def job_prepare_for_output(conf: Conf, job, long_listing=False, supress_hints=Tr
     else:
         job["status_long"] = textwrap.fill(job.get("status_long", "Unknown"))
 
+    if job["image_state"] != "stable":
+        job["image"] += " ({})".format(job["image_state"])
+
     if long_listing:
         headers = conf.JOB_TABULATION_HEADERS_LONG
     else:

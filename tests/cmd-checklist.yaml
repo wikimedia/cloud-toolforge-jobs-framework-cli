@@ -8,7 +8,7 @@
       SLEEP: "2"
       BIN: python3 -c "from tjf_cli.cli import main; main()"
       TOOLHOME: /data/project/tf-test
-      CONTAINER: tf-bullseye-std
+      CONTAINER: bullseye
       NORMALJOBNAME: test-job
       TESTCMD: test-cmd.sh
       CUSTOM_LOG_FILE: custom-log-file

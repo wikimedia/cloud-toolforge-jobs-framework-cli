@@ -1,6 +1,6 @@
 .\" (C) Copyright 2021 Arturo Borrero Gonzalez <aborrero@wikimedia.org>
 .\"
-.TH TOOLFORGE-JOBS-FRAMEWORK 1 "October 10 2022"
+.TH TOOLFORGE-JOBS-FRAMEWORK 1 "January 20 2023"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .SH NAME
@@ -31,45 +31,31 @@ Top level actions that the command supports:
 
 .TP
 .B images
-List information on available container image types for the \fBToolforge Jobs Framework\fP. To be used in
-the \fBrun\fP command \fB--image\fP parameter.
+List information on available non-deprecated container image types for the \fBToolforge Jobs Framework\fP.
+To be used in the \fBrun\fP command \fB--image\fP parameter.
 
-Container images marked as \fBDEPRECATED\fP should be avoided in general.
+Occasionally some images are deprecated by the Toolforge admins. In that case existing jobs will continue
+working and new jobs can be created, but the images will not be visible on the image listing.
 
 Example:
 
 .nf
 $ toolforge-jobs images
-+--------------------------+------------------------------------------------------------------------+
-|        Short name        |                           Container image URL                          |
-+--------------------------+------------------------------------------------------------------------+
-|     tf-bullseye-std      | docker-registry.tools.wmflabs.org/toolforge-bullseye-standalone:latest |
-| tf-buster-std-DEPRECATED |  docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest  |
-|        tf-golang         |  docker-registry.tools.wmflabs.org/toolforge-golang-sssd-base:latest   |
-|       tf-golang111       | docker-registry.tools.wmflabs.org/toolforge-golang111-sssd-base:latest |
-|         tf-jdk17         |   docker-registry.tools.wmflabs.org/toolforge-jdk17-sssd-base:latest   |
-|   tf-jdk11-DEPRECATED    |   docker-registry.tools.wmflabs.org/toolforge-jdk11-sssd-base:latest   |
-|    tf-jdk8-DEPRECATED    |   docker-registry.tools.wmflabs.org/toolforge-jdk8-sssd-base:latest    |
-|        tf-node12         |  docker-registry.tools.wmflabs.org/toolforge-node12-sssd-base:latest   |
-|   tf-node10-DEPRECATED   |  docker-registry.tools.wmflabs.org/toolforge-node10-sssd-base:latest   |
-|   tf-node6-DEPRECATED    |   docker-registry.tools.wmflabs.org/toolforge-node6-sssd-base:latest   |
-|    tf-php5-DEPRECATED    |   docker-registry.tools.wmflabs.org/toolforge-php5-sssd-base:latest    |
-|   tf-php72-DEPRECATED    |   docker-registry.tools.wmflabs.org/toolforge-php72-sssd-base:latest   |
-|   tf-php73-DEPRECATED    |   docker-registry.tools.wmflabs.org/toolforge-php73-sssd-base:latest   |
-|         tf-php74         |   docker-registry.tools.wmflabs.org/toolforge-php74-sssd-base:latest   |
-|  tf-python2-DEPRECATED   |  docker-registry.tools.wmflabs.org/toolforge-python2-sssd-base:latest  |
-|  tf-python34-DEPRECATED  | docker-registry.tools.wmflabs.org/toolforge-python34-sssd-base:latest  |
-|  tf-python35-DEPRECATED  | docker-registry.tools.wmflabs.org/toolforge-python35-sssd-base:latest  |
-|  tf-python37-DEPRECATED  | docker-registry.tools.wmflabs.org/toolforge-python37-sssd-base:latest  |
-|       tf-python39        | docker-registry.tools.wmflabs.org/toolforge-python39-sssd-base:latest  |
-|   tf-ruby21-DEPRECATED   |  docker-registry.tools.wmflabs.org/toolforge-ruby21-sssd-base:latest   |
-|   tf-ruby25-DEPRECATED   |  docker-registry.tools.wmflabs.org/toolforge-ruby25-sssd-base:latest   |
-|        tf-ruby27         |  docker-registry.tools.wmflabs.org/toolforge-ruby27-sssd-base:latest   |
-|         tf-tcl86         |   docker-registry.tools.wmflabs.org/toolforge-tcl86-sssd-base:latest   |
-|       wm-bullseye        |      docker-registry.tools.wmflabs.org/wikimedia-bullseye:latest       |
-|   wm-buster-DEPRECATED   |       docker-registry.tools.wmflabs.org/wikimedia-buster:latest        |
-|  wm-stretch-DEPRECATED   |       docker-registry.tools.wmflabs.org/wikimedia-stretch:latest       |
-+--------------------------+------------------------------------------------------------------------+
++------------+------------------------------------------------------------------------+
+| Short name |                          Container image URL                           |
++------------+------------------------------------------------------------------------+
+|  bullseye  |    docker-registry.tools.wmflabs.org/toolforge-bullseye-sssd:latest    |
+| golang1.11 | docker-registry.tools.wmflabs.org/toolforge-golang111-sssd-base:latest |
+|   jdk17    |   docker-registry.tools.wmflabs.org/toolforge-jdk17-sssd-base:latest   |
+|  mono6.8   |  docker-registry.tools.wmflabs.org/toolforge-mono68-sssd-base:latest   |
+|   node16   |  docker-registry.tools.wmflabs.org/toolforge-node16-sssd-base:latest   |
+|  perl5.32  |  docker-registry.tools.wmflabs.org/toolforge-perl532-sssd-base:latest  |
+|   php7.4   |   docker-registry.tools.wmflabs.org/toolforge-php74-sssd-base:latest   |
+| python3.9  | docker-registry.tools.wmflabs.org/toolforge-python39-sssd-base:latest  |
+|  ruby2.1   |  docker-registry.tools.wmflabs.org/toolforge-ruby21-sssd-base:latest   |
+|  ruby2.7   |  docker-registry.tools.wmflabs.org/toolforge-ruby27-sssd-base:latest   |
+|   tcl8.6   |   docker-registry.tools.wmflabs.org/toolforge-tcl86-sssd-base:latest   |
++------------+------------------------------------------------------------------------+
 .fi
 
 .TP
@@ -79,7 +65,7 @@ Run a new job of your own in Toolforge. Action specific parameters:
 .nf
 NAME                    New job name, unique identifier. Example: "myjob"
 --command COMMAND       The command to run in the job. Example: "./mycommand.sh argone --argtwo"
---image IMAGE           Container image shortname. Check them with the \fBcontainers\fP action. Example: "tf-bullseye-std".
+--image IMAGE           Container image shortname. Check them with the \fBimages\fP action. Example: "bullseye".
 --no-filelog            Disable log storage in files in the tool home directory.
 -o, --filelog-stdout    Specify the path to store output logs
 -e, --filelog-stderr    Specify the path to store error logs
@@ -97,34 +83,34 @@ Some complete examples:
 
 .nf
 Running a normal job:
-$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-std
+$ toolforge-jobs run myjob --command ./mycommand.sh --image bullseye
 
 Running a normal job and waiting for it to complete:
-$ toolforge-jobs run myotherjob --command ./myothercommand.sh --image tf-bullseye-std --wait
+$ toolforge-jobs run myotherjob --command ./myothercommand.sh --image bullseye --wait
 
 Running a continuous job:
-$ toolforge-jobs run myalwaysrunningjob --command ./myendlesscommand.sh --image tf-bullseye-std --continuous
+$ toolforge-jobs run myalwaysrunningjob --command ./myendlesscommand.sh --image bullseye --continuous
 
 Running a scheduled job:
-$ toolforge-jobs run mycronjob --command ./everyminute.sh --image tf-bullseye-std --schedule "1 * * * *"
+$ toolforge-jobs run mycronjob --command ./everyminute.sh --image bullseye --schedule "1 * * * *"
 
 Running a scheduled job with --retry policy set:
-$ toolforge-jobs run mycronjob --command ./everyminute.sh --image tf-bullseye-std --schedule "1 * * * *" --retry
+$ toolforge-jobs run mycronjob --command ./everyminute.sh --image bullseye --schedule "1 * * * *" --retry
 
 Running a normal job without logs being stored:
-$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-std --no-filelog --emails none
+$ toolforge-jobs run myjob --command ./mycommand.sh --image bullseye --no-filelog --emails none
 
 Running a normal job with custom log files:
-$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-std --emails none -o ./log-file.out -e ./log-file.err
+$ toolforge-jobs run myjob --command ./mycommand.sh --image bullseye --emails none -o ./log-file.out -e ./log-file.err
 
 Running a normal job with both output and error logs stored in same file:
-$ toolforge-jobs run myjob --command ./mycommand.sh --image tf-bullseye-std --emails none --filelog-stdout ./log-file.txt --filelog-stderr ./log-file.txt
+$ toolforge-jobs run myjob --command ./mycommand.sh --image bullseye --emails none --filelog-stdout ./log-file.txt --filelog-stderr ./log-file.txt
 
 Running a job with command arguments:
-$ toolforge-jobs run myjob --command "./mycommand.sh --witharguments" --image tf-bullseye-std --emails all
+$ toolforge-jobs run myjob --command "./mycommand.sh --witharguments" --image bullseye --emails all
 
 Running a job requesting additional CPU and memory:
-$ toolforge-jobs run myjob --command "./heavycommand.sh" --image tf-bullseye-std --mem 1Gi --cpu 10
+$ toolforge-jobs run myjob --command "./heavycommand.sh" --image bullseye --mem 1Gi --cpu 10
 .fi
 
 .TP
@@ -142,7 +128,7 @@ $ toolforge-jobs show myscheduledjob
 +------------+-----------------------------------------------------------------+
 | Job type:  | schedule: * * * * *                                             |
 +------------+-----------------------------------------------------------------+
-| Container: | tf-bullseye-std                                                 |
+| Container: | bullseye                                                        |
 +------------+-----------------------------------------------------------------+
 | File log:  | yes                                                             |
 +------------+-----------------------------------------------------------------+
@@ -184,11 +170,11 @@ Example, long listing:
 
 .nf
 $ toolforge-jobs list -l
-Job name:       Command:                 Job type:            Container:        File log:  Output log:                               Error log:                                Emails:   Resources:  Retry:           Status:
---------------  -----------------------  -------------------  ---------------   ---------  ----------------------------------------  ----------------------------------------  -------   ----------  --------------   ----------------------------------------
-myscheduledjob  ./read-dumps.sh          schedule: * * * * *  tf-bullseye-std   yes        /data/project/my-user/myscheduledjob.out  /data/project/my-user/myscheduledjob.err  none      default     yes: 5 time(s)   Last schedule time: 2021-06-30T10:26:00Z
-alwaysrunning   ./myendlesscommand.sh    continuous           tf-bullseye-std   no         /dev/null                                 /dev/null                                 all       default     no               Running
-myjob           ./mycommand.sh --debug   normal               tf-bullseye-std   yes        /data/project/my-user/custom.out          /data/project/my-user/custom.err          onfinish  default     yes: 1 time(s)   Completed
+Job name:       Command:                 Job type:            Container:           File log:  Output log:                               Error log:                                Emails:   Resources:  Retry:           Status:
+--------------  -----------------------  -------------------  -------------------  ---------  ----------------------------------------  ----------------------------------------  -------   ----------  --------------   ----------------------------------------
+myscheduledjob  ./read-dumps.sh          schedule: * * * * *  bullseye              yes       /data/project/my-user/myscheduledjob.out  /data/project/my-user/myscheduledjob.err  none      default     yes: 5 time(s)   Last schedule time: 2021-06-30T10:26:00Z
+alwaysrunning   ./myendlesscommand.sh    continuous           bullseye              no        /dev/null                                 /dev/null                                 all       default     no               Running
+myjob           ./mycommand.sh --debug   normal               buster (deprecated)   yes       /data/project/my-user/custom.out          /data/project/my-user/custom.err          onfinish  default     yes: 1 time(s)   Completed
 .fi
 
 .TP
@@ -213,13 +199,13 @@ Example YAML file:
 # a cronjob
 - name: everyminute
   command: ./myothercommand.py -v
-  image: tf-bullseye-std
+  image: bullseye
   no-filelog: true
   schedule: "* * * * *"
   retry: 5
   emails: onfailure
 # a continuous job
-- image: tf-bullseye-std
+- image: bullseye
   name: endlessjob
   command: ./dumps-daemon.py --endless
   filelog-stdout: /data/project/user/custom.out
@@ -228,7 +214,7 @@ Example YAML file:
   emails: all
 # wait for this normal job before loading the next
 - name: myjob
-  image: tf-bullseye-std
+  image: bullseye
   command: ./mycommand.sh --argument1
   filelog-stdout: /data/project/user/custom.log
   filelog-stderr: /data/project/user/custom.log
@@ -237,7 +223,7 @@ Example YAML file:
   emails: onfinish
 # another normal job after the previous one finished running
 - name: anotherjob
-  image: tf-bullseye-std
+  image: bullseye
   command: ./mycommand.sh --argument1
   emails: none
 .fi

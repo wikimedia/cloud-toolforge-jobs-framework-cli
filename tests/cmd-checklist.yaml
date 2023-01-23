@@ -216,7 +216,7 @@
 
 - name: normal job produces file logs
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}2 --command "./${TESTCMD} --withargs" --image ${CONTAINER}
+    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}2 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --wait
       retcode: 0
     - cmd: cat ${TOOLHOME}/${NORMALJOBNAME}2.out
       retcode: 0
@@ -227,9 +227,7 @@
 
 - name: normal job should log to single file
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}3 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --filelog-stdout ${CUSTOM_LOG_FILE}3.out --filelog-stderr ${CUSTOM_LOG_FILE}3.out
-      retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME}3
+    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}3 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --filelog-stdout ${CUSTOM_LOG_FILE}3.out --filelog-stderr ${CUSTOM_LOG_FILE}3.out --wait
       retcode: 0
     - cmd: grep -q "stdout --withargs" ${TOOLHOME}/${CUSTOM_LOG_FILE}3.out
       retcode: 0
@@ -242,9 +240,7 @@
 
 - name: normal job should log to custom-log-file4.out and custom-log-file4.err
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}4 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --filelog-stdout ${TOOLHOME}/${CUSTOM_LOG_FILE}4.out --filelog-stderr ${TOOLHOME}/${CUSTOM_LOG_FILE}4.err
-      retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME}4
+    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}4 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --filelog-stdout ${TOOLHOME}/${CUSTOM_LOG_FILE}4.out --filelog-stderr ${TOOLHOME}/${CUSTOM_LOG_FILE}4.err --wait
       retcode: 0
     - cmd: grep -q "stdout --withargs" ${TOOLHOME}/${CUSTOM_LOG_FILE}4.out
       retcode: 0
@@ -252,10 +248,10 @@
       retcode: 0
     # cleanup
     - cmd: ${BIN} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}4
- 
+
 - name: normal job with --no-filelog doesn't produce any log
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}5 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --no-filelog
+    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}5 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --no-filelog --wait
       retcode: 0
     - cmd: ls ${TOOLHOME}/${NORMALJOBNAME}5.out
       retcode: 2
@@ -263,10 +259,10 @@
       retcode: 2
     # cleanup
     - cmd: ${BIN} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}5
- 
+
 - name: normal job with --no-filelog doesn't produce any log
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}3 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --no-filelog
+    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}3 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --no-filelog --wait
       retcode: 0
     - cmd: ls ${TOOLHOME}/${NORMALJOBNAME}3.out
       retcode: 2

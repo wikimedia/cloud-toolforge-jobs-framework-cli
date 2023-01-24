@@ -452,26 +452,6 @@ def op_flush(conf: Conf):
     logging.debug("all jobs were flushed (if any existed anyway, we didn't check)")
 
 
-def _flush_and_wait(conf: Conf):
-    op_flush(conf)
-
-    curtime = starttime = time.time()
-    while curtime - starttime < WAIT_TIMEOUT:
-        logging.debug(f"waiting for jobs list to be empty, sleeping {WAIT_SLEEP} seconds")
-        time.sleep(WAIT_SLEEP)
-        curtime = time.time()
-
-        list = _list_jobs(conf)
-
-        if len(list) == 0:
-            # ok!
-            return
-
-    logging.error("could not load new jobs")
-    logging.error(f"timed out ({WAIT_TIMEOUT} seconds) waiting for previous jobs to be flushed")
-    sys.exit(1)
-
-
 def _delete_and_wait(conf: Conf, names: Set[str]):
     for name in names:
         op_delete(conf, name)

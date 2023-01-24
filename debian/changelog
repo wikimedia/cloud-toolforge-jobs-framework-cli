@@ -1,3 +1,10 @@
+toolforge-jobs-framework-cli (10) buster; urgency=medium
+
+  [ Arturo Borrero Gonzalez ]
+  * [4012f7c] d/py3dist-overrides: override forcediphttpsadapter
+
+ -- Taavi Väänänen <hi@taavi.wtf>  Tue, 24 Jan 2023 13:53:50 +0200
+
 toolforge-jobs-framework-cli (9) buster; urgency=medium
 
   [ Raymond Ndibe ]

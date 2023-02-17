@@ -31,6 +31,7 @@ SIMPLE_TEST_JOB_API = {
         "State 'running'. Started at '2022-10-08T09:28:39Z'."
     ),
     "emails": "none",
+    "retry": 0,
 }
 
 
@@ -75,6 +76,10 @@ def merge(first: Dict, second: Dict, unset=None) -> Dict:
         [merge(SIMPLE_TEST_JOB, {"no-filelog": False}), SIMPLE_TEST_JOB_API, True],
         [merge(SIMPLE_TEST_JOB, {"no-filelog": True}), SIMPLE_TEST_JOB_API, False],
         [SIMPLE_TEST_JOB, merge(SIMPLE_TEST_JOB_API, {"filelog": "False"}), False],
+        # and retries
+        [merge(SIMPLE_TEST_JOB, {"retry": 0}), SIMPLE_TEST_JOB_API, True],
+        [merge(SIMPLE_TEST_JOB, {"retry": 1}), SIMPLE_TEST_JOB_API, False],
+        [SIMPLE_TEST_JOB, merge(SIMPLE_TEST_JOB_API, {"retry": 2}), False],
         # filelog_stdout
         [
             merge(SIMPLE_TEST_JOB, {"filelog-stdout": "xyz"}),

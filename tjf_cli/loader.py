@@ -48,7 +48,7 @@ def jobs_are_same(job_config: Dict, api_obj: Dict) -> bool:
     api_obj["filelog-stderr"] = api_obj.get("filelog_stderr", None)
 
     # TODO: explicitely setting default CPU/memory should not count as a difference
-    dont_evaluate_here = ["name", "emails", "no-filelog", "wait"]
+    dont_evaluate_here = ["name", "emails", "no-filelog", "wait", "retry"]
     keys = [k for k in KNOWN_YAML_KEYS if k not in dont_evaluate_here]
     for key in keys:
         if api_obj.get(key, None) != job_config.get(key, None):
@@ -63,6 +63,13 @@ def jobs_are_same(job_config: Dict, api_obj: Dict) -> bool:
     if api_obj["emails"] != emails_config:
         LOGGER.debug(
             "currently existing job %s has different 'emails' than the definition", api_obj["name"]
+        )
+        return False
+
+    retry_config = job_config.get("retry", 0)
+    if api_obj["retry"] != retry_config:
+        LOGGER.debug(
+            "currently existing job %s has different 'retry' than the definition", api_obj["name"]
         )
         return False
 

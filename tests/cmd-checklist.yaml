@@ -1,13 +1,14 @@
 ---
 - envvars:
-    - KUBECONFIG: /data/project/tf-test/.kube/config
+    - KUBECONFIG: ~/.local/toolforge-lima-kilo/chroot/data/project/tf-test/.kube/config
       CUSTOMURL: https://localhost:30003/jobs/api/v1
       CUSTOMADDR: 127.0.0.1
       CUSTOMFQDN: api.svc.toolsbeta.eqiad1.wikimedia.cloud
       CFGFILE: ./test-cfg.yaml
       SLEEP: "2"
       BIN: python3 -c "from tjf_cli.cli import main; main()"
-      TOOLHOME: /data/project/tf-test
+      TLS: --cert ~/.local/toolforge-lima-kilo/chroot/data/project/tf-test/.toolskube/client.crt --key ~/.local/toolforge-lima-kilo/chroot/data/project/tf-test/.toolskube/client.key
+      TOOLHOME: ~/.local/toolforge-lima-kilo/chroot/data/project/tf-test
       CONTAINER: bullseye
       NORMALJOBNAME: test-job
       TESTCMD: test-cmd.sh
@@ -34,20 +35,20 @@
     - cmd: rm -f ${TOOLHOME}/${SCHEDJOBNAME}.*
     - cmd: rm -f ${TOOLHOME}/${CONTJOBNAME}.*
     - cmd: rm -f ${TOOLHOME}/${CUSTOM_LOG_FILE}*
-    - cmd: ${BIN} --cfg ${CFGFILE} flush
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} flush
     - cmd: sleep ${SLEEP}
 
 - name: list images
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} images | grep -q "Short name"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} images | grep -q "Short name"
       retcode: 0
       stdout: ""
       stderr: ""
-    - cmd: ${BIN} --cfg ${CFGFILE} images | grep -q "Container image URL"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} images | grep -q "Container image URL"
       retcode: 0
       stdout: ""
       stderr: ""
-    - cmd: ${BIN} --cfg ${CFGFILE} images | grep -q ${CONTAINER}
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} images | grep -q ${CONTAINER}
       retcode: 0
       stdout: ""
       stderr: ""
@@ -64,13 +65,13 @@
       retcode: 0
       stderr: ""
     - cmd: chmod a+x ${TOOLHOME}/${TESTCMD}
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER}
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER}
       retcode: 0
 
 - name: show normal job
   tests:
     - cmd: |
-            response=$(${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME})
+            response=$(${BIN} ${TLS} --cfg ${CFGFILE} show ${NORMALJOBNAME})
             echo "$response" | egrep -q "Job name:"[[:space:]]*"\| ${NORMALJOBNAME}" \
             && echo "$response" | egrep -q "Command:"[[:space:]]*"\| ./${TESTCMD} --withargs" \
             && echo "$response" | egrep -q "Job type:"[[:space:]]*"\| normal" \
@@ -91,14 +92,14 @@
   tests:
     # predictable table headers
     - cmd: |
-            ${BIN} --cfg ${CFGFILE} list -l | grep "Job name:" | grep "Command:" \
+            ${BIN} ${TLS} --cfg ${CFGFILE} list -l | grep "Job name:" | grep "Command:" \
             | grep "Job type:" | grep "Image:" | grep "File log:" \
             | grep "Output log:" | grep "Error log:" | grep "Status:" | grep "Emails:" \
             | grep "Retry:" | grep -q "Resources:"
       retcode: 0
     # predictable job list output
     - cmd: |
-            ${BIN} --cfg ${CFGFILE} list --long | grep ${NORMALJOBNAME} \
+            ${BIN} ${TLS} --cfg ${CFGFILE} list --long | grep ${NORMALJOBNAME} \
             | grep "./${TESTCMD} --withargs" | grep "normal" | grep ${CONTAINER} \
             | egrep ""[[:space:]]"yes"[[:space:]]"" | grep ${NORMALJOBNAME}.out \
             | grep ${NORMALJOBNAME}.err | grep default | egrep ""[[:space:]]"none"[[:space:]]"" \
@@ -108,126 +109,126 @@
 - name: list normal job (short)
   tests:
     # predictable table headers
-    - cmd: ${BIN} --cfg ${CFGFILE} list | grep "Job name:" | grep "Job type:" | grep -q "Status:"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} list | grep "Job name:" | grep "Job type:" | grep -q "Status:"
       retcode: 0
     # predictable job list output
-    - cmd: ${BIN} --cfg ${CFGFILE} list | grep ${NORMALJOBNAME} | grep -q "normal"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} list | grep ${NORMALJOBNAME} | grep -q "normal"
       retcode: 0
 
 - name: normal job can be deleted
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} delete ${NORMALJOBNAME}
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} delete ${NORMALJOBNAME}
       retcode: 0
     - cmd: sleep ${SLEEP}
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | grep ERROR | grep -q "job '${NORMALJOBNAME}' does not exist"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${NORMALJOBNAME} | grep ERROR | grep -q "job '${NORMALJOBNAME}' does not exist"
       retcode: 0
 
 - name: run retried job with retry not within acceptable values should fail
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --retry 6
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --retry 6
       retcode: 2
       stdout: ""
-    - cmd: ${BIN} --cfg ${CFGFILE} list | grep "Job name:" | wc -l
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} list | grep "Job name:" | wc -l
       retcode: 0
       stdout: "0"
       stderr: ""
 
 - name: run retried job
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --retry 3
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --retry 3
       retcode: 0
 
 - name: show retried job (check the "Retry" row)
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | egrep -q "Retry:"[[:space:]]*"\| yes"[[:graph:]]" 3 time\(s\)"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${NORMALJOBNAME} | egrep -q "Retry:"[[:space:]]*"\| yes"[[:graph:]]" 3 time\(s\)"
       retcode: 0
 
 - name: list retried job (long)(check the "Retry" column)
   tests:
     # predictable table headers
-    - cmd: ${BIN} --cfg ${CFGFILE} list -l | grep -q "Retry:"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} list -l | grep -q "Retry:"
       retcode: 0
     # predictable job list output
-    - cmd: ${BIN} --cfg ${CFGFILE} list --long | egrep -q "yes"[[:graph:]]" 3 time\(s\)"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} list --long | egrep -q "yes"[[:graph:]]" 3 time\(s\)"
       retcode: 0
 
 - name: retried job can be deleted
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} delete ${NORMALJOBNAME}
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} delete ${NORMALJOBNAME}
       retcode: 0
     - cmd: sleep ${SLEEP}
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | grep ERROR | grep -q "job '${NORMALJOBNAME}' does not exist"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${NORMALJOBNAME} | grep ERROR | grep -q "job '${NORMALJOBNAME}' does not exist"
       retcode: 0
 
 - name: job with non-default resource allocation
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command ./${TESTCMD} --image ${CONTAINER} --mem 100Mi --cpu 1
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command ./${TESTCMD} --image ${CONTAINER} --mem 100Mi --cpu 1
       retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${NORMALJOBNAME} | grep Resources | grep mem | grep 100Mi | grep cpu | grep -q 1
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${NORMALJOBNAME} | grep Resources | grep mem | grep 100Mi | grep cpu | grep -q 1
       retcode: 0
     # cleanup
-    - cmd: ${BIN} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}
 
 - name: run schedule job
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${SCHEDJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --schedule "* * * * *"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} run ${SCHEDJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --schedule "* * * * *"
       retcode: 0
 
 - name: show schedule job
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${SCHEDJOBNAME} | egrep "Job type:"[[:space:]]*"| schedule" | grep -q "* * * * *"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${SCHEDJOBNAME} | egrep "Job type:"[[:space:]]*"| schedule" | grep -q "* * * * *"
       retcode: 0
 
 - name: list schedule job
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} list | grep ${SCHEDJOBNAME} | grep schedule | grep -q "* * * * *"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} list | grep ${SCHEDJOBNAME} | grep schedule | grep -q "* * * * *"
       retcode: 0
 
 - name: delete schedule job
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} delete ${SCHEDJOBNAME}
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} delete ${SCHEDJOBNAME}
       retcode: 0
     - cmd: sleep ${SLEEP}
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${SCHEDJOBNAME} | grep ERROR | grep -q "job '${SCHEDJOBNAME}' does not exist"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${SCHEDJOBNAME} | grep ERROR | grep -q "job '${SCHEDJOBNAME}' does not exist"
       retcode: 0
 
 - name: run continuous job
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${CONTJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --continuous
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} run ${CONTJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --continuous
       retcode: 0
 
 - name: show continuous job
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${CONTJOBNAME} | egrep -q "Job type:"[[:space:]]*"| continuous"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${CONTJOBNAME} | egrep -q "Job type:"[[:space:]]*"| continuous"
       retcode: 0
 
 - name: list continuous job
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} list | grep ${CONTJOBNAME} | grep -q continuous
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} list | grep ${CONTJOBNAME} | grep -q continuous
       retcode: 0
 
 - name: delete continuous job
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} delete ${CONTJOBNAME}
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} delete ${CONTJOBNAME}
       retcode: 0
     - cmd: sleep ${SLEEP}
-    - cmd: ${BIN} --cfg ${CFGFILE} show ${CONTJOBNAME} | grep ERROR | grep -q "job '${CONTJOBNAME}' does not exist"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${CONTJOBNAME} | grep ERROR | grep -q "job '${CONTJOBNAME}' does not exist"
       retcode: 0
 
 - name: normal job produces file logs
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}2 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --wait
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} run ${NORMALJOBNAME}2 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --wait
       retcode: 0
     - cmd: cat ${TOOLHOME}/${NORMALJOBNAME}2.out
       retcode: 0
     - cmd: cat ${TOOLHOME}/${NORMALJOBNAME}2.err
       retcode: 0
     # cleanup
-    - cmd: ${BIN} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}2
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}2
 
 - name: normal job should log to single file
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}3 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --filelog-stdout ${CUSTOM_LOG_FILE}3.out --filelog-stderr ${CUSTOM_LOG_FILE}3.out --wait
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} run ${NORMALJOBNAME}3 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --filelog-stdout ${CUSTOM_LOG_FILE}3.out --filelog-stderr ${CUSTOM_LOG_FILE}3.out --wait
       retcode: 0
     - cmd: grep -q "stdout --withargs" ${TOOLHOME}/${CUSTOM_LOG_FILE}3.out
       retcode: 0
@@ -236,50 +237,50 @@
     - cmd: ls ${TOOLHOME}/${CUSTOM_LOG_FILE}3.err
       retcode: 2
     # cleanup
-    - cmd: ${BIN} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}3
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}3
 
 - name: normal job should log to custom-log-file4.out and custom-log-file4.err
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}4 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --filelog-stdout ${TOOLHOME}/${CUSTOM_LOG_FILE}4.out --filelog-stderr ${TOOLHOME}/${CUSTOM_LOG_FILE}4.err --wait
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} run ${NORMALJOBNAME}4 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --filelog-stdout ${CUSTOM_LOG_FILE}4.out --filelog-stderr ${CUSTOM_LOG_FILE}4.err --wait
       retcode: 0
     - cmd: grep -q "stdout --withargs" ${TOOLHOME}/${CUSTOM_LOG_FILE}4.out
       retcode: 0
     - cmd: grep -q "stderr" ${TOOLHOME}/${CUSTOM_LOG_FILE}4.err
       retcode: 0
     # cleanup
-    - cmd: ${BIN} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}4
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}4
 
 - name: normal job with --no-filelog doesn't produce any log
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}5 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --no-filelog --wait
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} run ${NORMALJOBNAME}5 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --no-filelog --wait
       retcode: 0
     - cmd: ls ${TOOLHOME}/${NORMALJOBNAME}5.out
       retcode: 2
     - cmd: ls ${TOOLHOME}/${NORMALJOBNAME}5.err
       retcode: 2
     # cleanup
-    - cmd: ${BIN} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}5
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}5
 
 - name: normal job with --no-filelog doesn't produce any log
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME}3 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --no-filelog --wait
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} run ${NORMALJOBNAME}3 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --no-filelog --wait
       retcode: 0
     - cmd: ls ${TOOLHOME}/${NORMALJOBNAME}3.out
       retcode: 2
     - cmd: ls ${TOOLHOME}/${NORMALJOBNAME}3.err
       retcode: 2
     # cleanup
-    - cmd: ${BIN} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}3
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} delete  ${NORMALJOBNAME}3
 
 - name: run 3 jobs, they are all listed together
   tests:
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER}
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER}
       retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${CONTJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --continuous
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} run ${CONTJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --continuous
       retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} run ${SCHEDJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --schedule "* * * * *"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} run ${SCHEDJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --schedule "* * * * *"
       retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} list --long | grep ${CONTAINER} | wc -l
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} list --long | grep ${CONTAINER} | wc -l
       retcode: 0
       stdout: "3"
 
@@ -308,9 +309,9 @@
              emails: all
            EOF
       retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} load ${LOADFILE}
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} load ${LOADFILE}
       retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} list --long | grep ${CONTAINER} | wc -l
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} list --long | grep ${CONTAINER} | wc -l
       retcode: 0
       stdout: "3"
 
@@ -320,7 +321,7 @@
     - cmd: rm -f ${TOOLHOME}/${SCHEDJOBNAME}.*
     - cmd: rm -f ${TOOLHOME}/${CONTJOBNAME}.*
     - cmd: rm -f ${TOOLHOME}/${CUSTOM_LOG_FILE}*
-    - cmd: ${BIN} --cfg ${CFGFILE} flush
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} flush
       retcode: 0
-    - cmd: ${BIN} --cfg ${CFGFILE} list --long | grep -q ${CONTAINERS}
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} list --long | grep -q ${CONTAINERS}
       retcode: 2

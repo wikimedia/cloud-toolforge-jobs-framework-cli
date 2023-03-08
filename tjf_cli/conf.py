@@ -13,6 +13,7 @@ import os
 import socket
 import sys
 from logging import getLogger
+from typing import Optional
 
 import requests
 import yaml
@@ -51,7 +52,7 @@ class Conf:
         "image": "Container image URL",
     }
 
-    def __init__(self, cfg_file: str):
+    def __init__(self, cfg_file: str, cert_file: Optional[str], key_file: Optional[str]):
         """Constructor"""
 
         try:
@@ -94,7 +95,9 @@ class Conf:
             self.server = self.cluster["server"]
             self.namespace = self.context["namespace"]
             self.user = self._find_cfg_obj("users", self.context["user"])
-            self.session.cert = (self.user["client-certificate"], self.user["client-key"])
+            _cert = cert_file if cert_file else self.user["client-certificate"]
+            _key = key_file if key_file else self.user["client-key"]
+            self.session.cert = (_cert, _key)
         except KeyError as e:
             LOGGER.error(
                 "couldn't build session configuration from file "

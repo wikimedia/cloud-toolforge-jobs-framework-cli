@@ -46,6 +46,18 @@ def parse_args():
         "Only useful for Toolforge admins.",
     )
 
+    parser.add_argument(
+        "--cert",
+        required=False,
+        help="override kubeconfig TLS cert path. Only useful for Toolforge admins.",
+    )
+
+    parser.add_argument(
+        "--key",
+        required=False,
+        help="override kubeconfig TLS key path. Only useful for Toolforge admins.",
+    )
+
     subparser = parser.add_subparsers(
         help="possible operations (pass -h to know usage of each)",
         dest="operation",
@@ -582,7 +594,7 @@ def main():
             "not running as the tool account? Likely to fail. Perhaps you forgot `become <tool>`?"
         )
 
-    conf = Conf(args.cfg)
+    conf = Conf(args.cfg, args.cert, args.key)
     logging.debug("session configuration generated correctly")
 
     if args.operation == "images":

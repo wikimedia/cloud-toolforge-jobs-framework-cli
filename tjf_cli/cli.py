@@ -11,8 +11,9 @@
 # This program is the command line interface part of the Toolforge Jobs Framework.
 #
 
+from enum import Enum
 from tabulate import tabulate
-from typing import Optional, Set
+from typing import List, Optional, Set
 import textwrap
 import argparse
 import getpass
@@ -32,6 +33,15 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # for --wait: 5 minutes timeout, check every 5 seconds
 WAIT_TIMEOUT = 60 * 5
 WAIT_SLEEP = 5
+
+
+class ListDisplayMode(Enum):
+    NORMAL = "normal"
+    LONG = "long"
+
+    def __str__(self) -> str:
+        """Needed to play nice with argparse."""
+        return self.value
 
 
 def parse_args():
@@ -153,11 +163,20 @@ def parse_args():
         help="list all running jobs of your own in Toolforge",
     )
     listparser.add_argument(
+        "-o",
+        "--output",
+        type=ListDisplayMode,
+        choices=list(ListDisplayMode),
+        default=ListDisplayMode.NORMAL,
+        help="specify output format (defaults to %(default)s)",
+    )
+    # deprecated, remove in a few releases
+    listparser.add_argument(
         "-l",
         "--long",
         required=False,
         action="store_true",
-        help="show long table with full details about each job",
+        help=argparse.SUPPRESS,
     )
 
     deleteparser = subparser.add_parser(
@@ -210,7 +229,7 @@ def op_images(conf: Conf):
     print(output)
 
 
-def job_prepare_for_output(conf: Conf, job, long_listing=False, supress_hints=True):
+def job_prepare_for_output(conf: Conf, job, headers: List[str], suppress_hints=True):
     schedule = job.get("schedule", None)
     cont = job.get("continuous", None)
     retry = job.get("retry")
@@ -241,7 +260,7 @@ def job_prepare_for_output(conf: Conf, job, long_listing=False, supress_hints=Tr
     else:
         job["resources"] = f"mem: {mem}, cpu: {cpu}"
 
-    if supress_hints:
+    if suppress_hints:
         if job.get("status_long", None) is not None:
             job.pop("status_long", None)
     else:
@@ -249,11 +268,6 @@ def job_prepare_for_output(conf: Conf, job, long_listing=False, supress_hints=Tr
 
     if job["image_state"] != "stable":
         job["image"] += " ({})".format(job["image_state"])
-
-    if long_listing:
-        headers = conf.JOB_TABULATION_HEADERS_LONG
-    else:
-        headers = conf.JOB_TABULATION_HEADERS_SHORT
 
     # not interested in these fields ATM
     for key in job.copy():
@@ -263,7 +277,7 @@ def job_prepare_for_output(conf: Conf, job, long_listing=False, supress_hints=Tr
 
     # normalize key names for easier printing
     for key in headers:
-        if key == "status_long" and supress_hints:
+        if key == "status_long" and suppress_hints:
             continue
 
         oldkey = key
@@ -291,7 +305,7 @@ def _list_jobs(conf: Conf):
     return list
 
 
-def op_list(conf: Conf, long_listing: bool):
+def op_list(conf: Conf, output_format: ListDisplayMode):
     list = _list_jobs(conf)
 
     if len(list) == 0:
@@ -299,14 +313,14 @@ def op_list(conf: Conf, long_listing: bool):
         return
 
     try:
-        for job in list:
-            logging.debug(f"job information from the API: {job}")
-            job_prepare_for_output(conf, job, supress_hints=True, long_listing=long_listing)
-
-        if long_listing:
+        if output_format == ListDisplayMode.LONG:
             headers = conf.JOB_TABULATION_HEADERS_LONG
         else:
             headers = conf.JOB_TABULATION_HEADERS_SHORT
+
+        for job in list:
+            logging.debug(f"job information from the API: {job}")
+            job_prepare_for_output(conf, job, headers=headers, suppress_hints=True)
 
         output = tabulate(list, headers=headers, tablefmt="pretty")
     except Exception as e:
@@ -428,7 +442,9 @@ def _show_job(conf: Conf, name: str, missing_ok: bool):
 
 def op_show(conf: Conf, name):
     job = _show_job(conf, name, missing_ok=False)
-    job_prepare_for_output(conf, job, supress_hints=False, long_listing=True)
+    job_prepare_for_output(
+        conf, job, suppress_hints=False, headers=conf.JOB_TABULATION_HEADERS_LONG
+    )
 
     # change table direction
     kvlist = []
@@ -625,7 +641,11 @@ def main():
     elif args.operation == "delete":
         op_delete(conf, args.name)
     elif args.operation == "list":
-        op_list(conf, args.long)
+        output_format = args.output
+        if args.long:
+            logging.warning("the `--long` flag is deprecated, use `--output long` instead")
+            output_format = ListDisplayMode.LONG
+        op_list(conf, output_format)
     elif args.operation == "flush":
         op_flush(conf)
     elif args.operation == "load":

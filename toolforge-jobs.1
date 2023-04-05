@@ -150,10 +150,10 @@ $ toolforge-jobs show myscheduledjob
 .fi
 
 .TP
-.B list [-l|--long]
+.B list [-o|--output {normal,long}]
 List all running jobs of your own in Toolforge.
 
-The \fB-l\fP (or \fB--long\fP) parameter indicates if additional fields should be displayed.
+The \fB-o\fP (or \fB--output\fP) parameter indicates how much detail is displayed.
 
 Example, short listing:
 
@@ -169,7 +169,7 @@ myjob           normal               Completed
 Example, long listing:
 
 .nf
-$ toolforge-jobs list -l
+$ toolforge-jobs list -o long
 Job name:       Command:                 Job type:            Container:           File log:  Output log:                               Error log:                                Emails:   Resources:  Retry:           Status:
 --------------  -----------------------  -------------------  -------------------  ---------  ----------------------------------------  ----------------------------------------  -------   ----------  --------------   ----------------------------------------
 myscheduledjob  ./read-dumps.sh          schedule: * * * * *  bullseye              yes       /data/project/my-user/myscheduledjob.out  /data/project/my-user/myscheduledjob.err  none      default     yes: 5 time(s)   Last schedule time: 2021-06-30T10:26:00Z

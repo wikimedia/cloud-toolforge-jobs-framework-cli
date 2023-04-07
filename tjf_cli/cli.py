@@ -25,6 +25,7 @@ import yaml
 import sys
 
 from tjf_cli.conf import Conf
+from tjf_cli.errors import TjfCliError
 from tjf_cli.loader import calculate_changes
 
 # TODO: disable this for now, review later
@@ -610,7 +611,12 @@ def main():
             "not running as the tool account? Likely to fail. Perhaps you forgot `become <tool>`?"
         )
 
-    conf = Conf(args.cfg, args.cert, args.key)
+    try:
+        conf = Conf(args.cfg, args.cert, args.key)
+    except TjfCliError:
+        logging.exception("Failed to load configuration, please contact a Toolforge admin")
+        sys.exit(1)
+
     logging.debug("session configuration generated correctly")
 
     if args.operation == "images":

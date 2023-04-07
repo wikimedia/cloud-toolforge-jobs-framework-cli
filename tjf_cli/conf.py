@@ -11,14 +11,19 @@
 
 import os
 import socket
-import sys
 from logging import getLogger
 from typing import Optional
 
 import requests
 import yaml
 
+from tjf_cli.errors import TjfCliError
+
 LOGGER = getLogger(__name__)
+
+
+class TjfCliConfigLoadError(TjfCliError):
+    """Raised when the configuration fails to load."""
 
 
 class Conf:
@@ -59,16 +64,14 @@ class Conf:
             with open(cfg_file) as f:
                 cfg = yaml.safe_load(f.read())
         except Exception as e:
-            LOGGER.error(f"couldn't read config file '{cfg_file}': {e}. Contact a Toolforge admin.")
-            sys.exit(1)
+            raise TjfCliConfigLoadError(f"Failed to read config file '{cfg_file}") from e
 
         try:
             self.api_url = cfg.get("api_url")
         except KeyError as e:
-            LOGGER.error(
-                f"missing key '{str(e)}' in config file '{cfg_file}'. Contact a Toolforge admin."
-            )
-            sys.exit(1)
+            raise TjfCliConfigLoadError(
+                f"Missing key '{str(e)}' in config file '{cfg_file}'"
+            ) from e
 
         kubeconfig = cfg.get("kubeconfig", "~/.kube/config")
         customhdr = cfg.get("customhdr", None)
@@ -80,11 +83,9 @@ class Conf:
             with open(self.kubeconfigfile) as f:
                 self.k8sconf = yaml.safe_load(f.read())
         except Exception as e:
-            LOGGER.error(
-                f"couldn't read kubeconfig file '{self.kubeconfigfile}': {e}. "
-                "Contact a Toolforge admin."
-            )
-            sys.exit(1)
+            raise TjfCliConfigLoadError(
+                f"Failed to read Kubernetes config file '{self.kubeconfigfile}"
+            ) from e
 
         LOGGER.debug(f"loaded kubeconfig file '{self.kubeconfigfile}'")
 
@@ -99,17 +100,13 @@ class Conf:
             _key = key_file if key_file else self.user["client-key"]
             self.session.cert = (_cert, _key)
         except KeyError as e:
-            LOGGER.error(
-                "couldn't build session configuration from file "
-                f"'{self.kubeconfigfile}': missing key {e}. Contact a Toolforge admin."
-            )
-            sys.exit(1)
+            raise TjfCliConfigLoadError(
+                f"Missing key '{str(e)}' in Kubernetes config file '{self.kubeconfigfile}'"
+            ) from e
         except Exception as e:
-            LOGGER.error(
-                "couldn't build session configuration from file "
-                f"'{self.kubeconfigfile}': {e}. Contact a Toolforge admin."
-            )
-            sys.exit(1)
+            raise TjfCliConfigLoadError(
+                f"Failed to parse Kubernetes config file '{self.kubeconfigfile}"
+            ) from e
 
         self._configure_user_agent()
 
@@ -136,4 +133,4 @@ class Conf:
         for obj in self.k8sconf[kind]:
             if obj["name"] == name:
                 return obj[kind[:-1]]
-        raise KeyError(f"key '{name}' not found in '{kind}' section of config")
+        raise TjfCliConfigLoadError(f"Key '{name}' not found in '{kind}' section of config")

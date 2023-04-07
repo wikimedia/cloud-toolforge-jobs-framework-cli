@@ -233,7 +233,7 @@ def parse_args():
 
 def op_images(api: ApiClient):
     try:
-        response = api.session.get(api.api_url + "/images/")
+        response = api.get("/images/")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -315,7 +315,7 @@ def job_prepare_for_output(api: ApiClient, job, headers: List[str], suppress_hin
 
 def _list_jobs(api: ApiClient):
     try:
-        response = api.session.get(api.api_url + "/list/")
+        response = api.get("/list/")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -425,7 +425,7 @@ def op_run(
     logging.debug(f"payload: {payload}")
 
     try:
-        response = api.session.post(api.api_url + "/run/", data=payload)
+        response = api.post("/run/", data=payload)
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -446,7 +446,7 @@ def op_run(
 
 def _show_job(api: ApiClient, name: str, missing_ok: bool):
     try:
-        response = api.session.get(api.api_url + f"/show/{name}")
+        response = api.get(f"/show/{name}")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -488,7 +488,7 @@ def op_show(api: ApiClient, name):
 
 def op_delete(api: ApiClient, name: str):
     try:
-        api.session.delete(api.api_url + f"/delete/{name}")
+        api.delete(f"/delete/{name}")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -498,7 +498,7 @@ def op_delete(api: ApiClient, name: str):
 
 def op_flush(api: ApiClient):
     try:
-        api.session.delete(api.api_url + "/flush/")
+        api.delete("/flush/")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -602,7 +602,7 @@ def op_load(api: ApiClient, file: str, job_name: Optional[str]):
 
 def op_restart(api: ApiClient, name: str):
     try:
-        api.session.post(api.api_url + f"/restart/{name}")
+        api.post(f"/restart/{name}")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -637,7 +637,7 @@ def main():
         )
 
     try:
-        api = ApiClient(args.cfg, args.cert, args.key)
+        api = ApiClient.create(args.cfg, args.cert, args.key)
     except TjfCliError:
         logging.exception("Failed to load configuration, please contact a Toolforge admin")
         sys.exit(1)

@@ -12,7 +12,7 @@
 import os
 import socket
 from logging import getLogger
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import requests
 import yaml
@@ -26,20 +26,34 @@ class TjfCliConfigLoadError(TjfCliError):
     """Raised when the configuration fails to load."""
 
 
+def _find_cfg_obj(config: Dict[str, Any], kind: str, name: str):
+    """Lookup a named object in our config."""
+    for obj in config[kind]:
+        if obj["name"] == name:
+            return obj[kind[:-1]]
+    raise TjfCliConfigLoadError(f"Key '{name}' not found in '{kind}' section of config")
+
+
 class ApiClient:
     """Client to work with the jobs-framework API."""
 
-    def __init__(self, cfg_file: str, cert_file: Optional[str], key_file: Optional[str]):
+    def __init__(self, *, session: requests.Session, api_url: str) -> None:
         """Constructor"""
+        self._session = session
+        self._api_url = api_url
+
+    @classmethod
+    def create(cls, cfg_file: str, cert_file: Optional[str], key_file: Optional[str]):
+        """Creates an ApiClient based on details in a config file."""
 
         try:
             with open(cfg_file) as f:
                 cfg = yaml.safe_load(f.read())
         except Exception as e:
-            raise TjfCliConfigLoadError(f"Failed to read config file '{cfg_file}") from e
+            raise TjfCliConfigLoadError(f"Failed to read config file '{cfg_file}'") from e
 
         try:
-            self.api_url = cfg.get("api_url")
+            api_url = cfg.get("api_url")
         except KeyError as e:
             raise TjfCliConfigLoadError(
                 f"Missing key '{str(e)}' in config file '{cfg_file}'"
@@ -49,60 +63,75 @@ class ApiClient:
         customhdr = cfg.get("customhdr", None)
         customaddr = cfg.get("customaddr", None)
         customfqdn = cfg.get("customfqdn", None)
-        self.kubeconfigfile = os.path.expanduser(kubeconfig)
+
+        k8s_config_file = os.path.expanduser(kubeconfig)
 
         try:
-            with open(self.kubeconfigfile) as f:
-                self.k8sconf = yaml.safe_load(f.read())
+            with open(k8s_config_file) as f:
+                k8s_config = yaml.safe_load(f.read())
         except Exception as e:
             raise TjfCliConfigLoadError(
-                f"Failed to read Kubernetes config file '{self.kubeconfigfile}"
+                f"Failed to read Kubernetes config file '{k8s_config_file}"
             ) from e
 
-        LOGGER.debug(f"loaded kubeconfig file '{self.kubeconfigfile}'")
+        LOGGER.debug(f"loaded kubeconfig file '{k8s_config_file}'")
 
-        self.session = requests.Session()
+        session = requests.Session()
         try:
-            self.context = self._find_cfg_obj("contexts", self.k8sconf["current-context"])
-            self.cluster = self._find_cfg_obj("clusters", self.context["cluster"])
-            self.server = self.cluster["server"]
-            self.namespace = self.context["namespace"]
-            self.user = self._find_cfg_obj("users", self.context["user"])
-            _cert = cert_file if cert_file else self.user["client-certificate"]
-            _key = key_file if key_file else self.user["client-key"]
-            self.session.cert = (_cert, _key)
+            context = _find_cfg_obj(k8s_config, "contexts", k8s_config["current-context"])
+            namespace = context["namespace"]
+            user = _find_cfg_obj(k8s_config, "users", context["user"])
+
+            cert = cert_file if cert_file else user["client-certificate"]
+            key = key_file if key_file else user["client-key"]
+            session.cert = (cert, key)
         except KeyError as e:
             raise TjfCliConfigLoadError(
-                f"Missing key '{str(e)}' in Kubernetes config file '{self.kubeconfigfile}'"
+                f"Missing key '{str(e)}' in Kubernetes config file '{k8s_config_file}'"
             ) from e
         except Exception as e:
             raise TjfCliConfigLoadError(
-                f"Failed to parse Kubernetes config file '{self.kubeconfigfile}"
+                f"Failed to parse Kubernetes config file '{k8s_config_file}"
             ) from e
 
-        self._configure_user_agent()
+        host = socket.gethostname()
+        pyrequest_ua = requests.utils.default_user_agent()
+        session.headers.update(
+            {"User-Agent": f"jobs-framework-cli {namespace}@{host} {pyrequest_ua}"}
+        )
 
         if customhdr is not None:
-            self.session.headers.update(customhdr)
+            session.headers.update(customhdr)
 
         # don't verify server-side TLS for now
-        self.session.verify = False
+        session.verify = False
 
         if customaddr is not None and customfqdn is not None:
             from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
 
-            self.session.mount(f"https://{customfqdn}", ForcedIPHTTPSAdapter(dest_ip=customaddr))
+            session.mount(f"https://{customfqdn}", ForcedIPHTTPSAdapter(dest_ip=customaddr))
 
-    def _configure_user_agent(self):
-        """Configure User-Agent header."""
-        host = socket.gethostname()
-        pyrequest_ua = requests.utils.default_user_agent()
-        ua_str = f"jobs-framework-cli {self.namespace}@{host} {pyrequest_ua}"
-        self.session.headers.update({"User-Agent": ua_str})
+        return cls(
+            session=session,
+            api_url=api_url,
+        )
 
-    def _find_cfg_obj(self, kind, name):
-        """Lookup a named object in our config."""
-        for obj in self.k8sconf[kind]:
-            if obj["name"] == name:
-                return obj[kind[:-1]]
-        raise TjfCliConfigLoadError(f"Key '{name}' not found in '{kind}' section of config")
+    def _make_kwargs(self, url_path: str, **kwargs) -> dict:
+        kwargs["url"] = f"{self._api_url}{url_path}"
+        return kwargs
+
+    def _make_request(self, method: str, url_path: str, **kwargs) -> requests.Response:
+        response = self._session.request(method, **self._make_kwargs(url_path, **kwargs))
+        return response
+
+    def get(self, url_path: str, **kwargs) -> requests.Response:
+        """Make a GET request."""
+        return self._make_request("GET", url_path, **kwargs)
+
+    def post(self, url_path: str, **kwargs) -> requests.Response:
+        """Make a POST request."""
+        return self._make_request("POST", url_path, **kwargs)
+
+    def delete(self, url_path: str, **kwargs) -> requests.Response:
+        """Make a DELETE request."""
+        return self._make_request("DELETE", url_path, **kwargs)

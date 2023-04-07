@@ -37,17 +37,12 @@ SIMPLE_TEST_JOB_API = {
 
 @pytest.fixture
 def mock_api(requests_mock) -> ApiClient:
-    api_base_url = "http://nonexistent"
+    api_url = "http://nonexistent"
 
     session = requests.Session()
-    requests_mock.get(f"{api_base_url}/list/", json=[SIMPLE_TEST_JOB_API])
+    requests_mock.get(f"{api_url}/list/", json=[SIMPLE_TEST_JOB_API])
 
-    class FakeApi:
-        def __init__(self, session, api_url) -> None:
-            self.session = session
-            self.api_url = api_url
-
-    yield FakeApi(session, api_base_url)
+    yield ApiClient(session=session, api_url=api_url)
 
 
 def merge(first: Dict, second: Dict, unset=None) -> Dict:

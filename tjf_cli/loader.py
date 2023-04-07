@@ -100,7 +100,7 @@ def calculate_changes(
     }
 
     try:
-        response = conf.session.get(f"{conf.api_url}/list/")
+        response = conf.get("/list/")
         response.raise_for_status()
         current_job_data = response.json()
     except Exception:

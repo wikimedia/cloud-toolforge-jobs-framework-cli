@@ -24,7 +24,7 @@ import json
 import yaml
 import sys
 
-from tjf_cli.conf import Conf
+from tjf_cli.api import ApiClient
 from tjf_cli.errors import TjfCliError
 from tjf_cli.loader import calculate_changes
 
@@ -34,6 +34,33 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # for --wait: 5 minutes timeout, check every 5 seconds
 WAIT_TIMEOUT = 60 * 5
 WAIT_SLEEP = 5
+
+
+JOB_TABULATION_HEADERS_SHORT = {
+    "name": "Job name:",
+    "type": "Job type:",
+    "status_short": "Status:",
+}
+
+JOB_TABULATION_HEADERS_LONG = {
+    "name": "Job name:",
+    "cmd": "Command:",
+    "type": "Job type:",
+    "image": "Image:",
+    "filelog": "File log:",
+    "filelog_stdout": "Output log:",
+    "filelog_stderr": "Error log:",
+    "emails": "Emails:",
+    "resources": "Resources:",
+    "retry": "Retry:",
+    "status_short": "Status:",
+    "status_long": "Hints:",
+}
+
+IMAGES_TABULATION_HEADERS = {
+    "shortname": "Short name",
+    "image": "Container image URL",
+}
 
 
 class ListDisplayMode(Enum):
@@ -204,9 +231,9 @@ def parse_args():
     return parser.parse_args()
 
 
-def op_images(conf: Conf):
+def op_images(api: ApiClient):
     try:
-        response = conf.session.get(conf.api_url + "/images/")
+        response = api.session.get(api.api_url + "/images/")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -222,7 +249,7 @@ def op_images(conf: Conf):
         sys.exit(1)
 
     try:
-        output = tabulate(images, headers=conf.IMAGES_TABULATION_HEADERS, tablefmt="pretty")
+        output = tabulate(images, headers=IMAGES_TABULATION_HEADERS, tablefmt="pretty")
     except Exception as e:
         logging.error(f"couldn't format information from the API. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -230,7 +257,7 @@ def op_images(conf: Conf):
     print(output)
 
 
-def job_prepare_for_output(conf: Conf, job, headers: List[str], suppress_hints=True):
+def job_prepare_for_output(api: ApiClient, job, headers: List[str], suppress_hints=True):
     schedule = job.get("schedule", None)
     cont = job.get("continuous", None)
     retry = job.get("retry")
@@ -286,9 +313,9 @@ def job_prepare_for_output(conf: Conf, job, headers: List[str], suppress_hints=T
         job[newkey] = job.pop(oldkey, "Unknown")
 
 
-def _list_jobs(conf: Conf):
+def _list_jobs(api: ApiClient):
     try:
-        response = conf.session.get(conf.api_url + "/list/")
+        response = api.session.get(api.api_url + "/list/")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -306,8 +333,8 @@ def _list_jobs(conf: Conf):
     return list
 
 
-def op_list(conf: Conf, output_format: ListDisplayMode):
-    list = _list_jobs(conf)
+def op_list(api: ApiClient, output_format: ListDisplayMode):
+    list = _list_jobs(api)
 
     if len(list) == 0:
         logging.debug("no jobs to be listed")
@@ -315,13 +342,13 @@ def op_list(conf: Conf, output_format: ListDisplayMode):
 
     try:
         if output_format == ListDisplayMode.LONG:
-            headers = conf.JOB_TABULATION_HEADERS_LONG
+            headers = JOB_TABULATION_HEADERS_LONG
         else:
-            headers = conf.JOB_TABULATION_HEADERS_SHORT
+            headers = JOB_TABULATION_HEADERS_SHORT
 
         for job in list:
             logging.debug(f"job information from the API: {job}")
-            job_prepare_for_output(conf, job, headers=headers, suppress_hints=True)
+            job_prepare_for_output(api, job, headers=headers, suppress_hints=True)
 
         output = tabulate(list, headers=headers, tablefmt="pretty")
     except Exception as e:
@@ -331,13 +358,13 @@ def op_list(conf: Conf, output_format: ListDisplayMode):
     print(output)
 
 
-def _wait_for_job(conf: Conf, name: str):
+def _wait_for_job(api: ApiClient, name: str):
     curtime = starttime = time.time()
     while curtime - starttime < WAIT_TIMEOUT:
         time.sleep(WAIT_SLEEP)
         curtime = time.time()
 
-        job = _show_job(conf, name, missing_ok=True)
+        job = _show_job(api, name, missing_ok=True)
         if job is None:
             logging.info(f"job '{name}' completed (and already deleted)")
             return
@@ -348,16 +375,16 @@ def _wait_for_job(conf: Conf, name: str):
 
         if job["status_short"] == "Failed":
             logging.error(f"job '{name}' failed:")
-            op_show(conf, name)
+            op_show(api, name)
             sys.exit(1)
 
     logging.error(f"timed out {WAIT_TIMEOUT} seconds waiting for job '{name}' to complete:")
-    op_show(conf, name)
+    op_show(api, name)
     sys.exit(1)
 
 
 def op_run(
-    conf: Conf,
+    api: ApiClient,
     name: str,
     command: str,
     schedule: Optional[str],
@@ -398,7 +425,7 @@ def op_run(
     logging.debug(f"payload: {payload}")
 
     try:
-        response = conf.session.post(conf.api_url + "/run/", data=payload)
+        response = api.session.post(api.api_url + "/run/", data=payload)
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -414,12 +441,12 @@ def op_run(
     logging.debug("job was created")
 
     if wait:
-        _wait_for_job(conf, name)
+        _wait_for_job(api, name)
 
 
-def _show_job(conf: Conf, name: str, missing_ok: bool):
+def _show_job(api: ApiClient, name: str, missing_ok: bool):
     try:
-        response = conf.session.get(conf.api_url + f"/show/{name}")
+        response = api.session.get(api.api_url + f"/show/{name}")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -441,11 +468,9 @@ def _show_job(conf: Conf, name: str, missing_ok: bool):
     return job
 
 
-def op_show(conf: Conf, name):
-    job = _show_job(conf, name, missing_ok=False)
-    job_prepare_for_output(
-        conf, job, suppress_hints=False, headers=conf.JOB_TABULATION_HEADERS_LONG
-    )
+def op_show(api: ApiClient, name):
+    job = _show_job(api, name, missing_ok=False)
+    job_prepare_for_output(api, job, suppress_hints=False, headers=JOB_TABULATION_HEADERS_LONG)
 
     # change table direction
     kvlist = []
@@ -461,9 +486,9 @@ def op_show(conf: Conf, name):
     print(output)
 
 
-def op_delete(conf: Conf, name: str):
+def op_delete(api: ApiClient, name: str):
     try:
-        conf.session.delete(conf.api_url + f"/delete/{name}")
+        api.session.delete(api.api_url + f"/delete/{name}")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -471,9 +496,9 @@ def op_delete(conf: Conf, name: str):
     logging.debug("job was deleted (if it existed anyway, we didn't check)")
 
 
-def op_flush(conf: Conf):
+def op_flush(api: ApiClient):
     try:
-        conf.session.delete(conf.api_url + "/flush/")
+        api.session.delete(api.api_url + "/flush/")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -481,9 +506,9 @@ def op_flush(conf: Conf):
     logging.debug("all jobs were flushed (if any existed anyway, we didn't check)")
 
 
-def _delete_and_wait(conf: Conf, names: Set[str]):
+def _delete_and_wait(api: ApiClient, names: Set[str]):
     for name in names:
-        op_delete(conf, name)
+        op_delete(api, name)
 
     curtime = starttime = time.time()
     while curtime - starttime < WAIT_TIMEOUT:
@@ -491,7 +516,7 @@ def _delete_and_wait(conf: Conf, names: Set[str]):
         time.sleep(WAIT_SLEEP)
         curtime = time.time()
 
-        jobs = _list_jobs(conf)
+        jobs = _list_jobs(api)
         if not any([job for job in jobs if job["name"] in names]):
             # ok!
             return
@@ -501,7 +526,7 @@ def _delete_and_wait(conf: Conf, names: Set[str]):
     sys.exit(1)
 
 
-def _load_job(conf: Conf, job: dict, n: int):
+def _load_job(api: ApiClient, job: dict, n: int):
     # these are mandatory
     try:
         name = job["name"]
@@ -528,7 +553,7 @@ def _load_job(conf: Conf, job: dict, n: int):
         wait = False
 
     op_run(
-        conf=conf,
+        api=api,
         name=name,
         command=command,
         schedule=schedule,
@@ -545,7 +570,7 @@ def _load_job(conf: Conf, job: dict, n: int):
     )
 
 
-def op_load(conf: Conf, file: str, job_name: Optional[str]):
+def op_load(api: ApiClient, file: str, job_name: Optional[str]):
     try:
         with open(file) as f:
             jobslist = yaml.safe_load(f.read())
@@ -557,11 +582,11 @@ def op_load(conf: Conf, file: str, job_name: Optional[str]):
     logging.debug(f"{jobslist}")
 
     changes = calculate_changes(
-        conf, jobslist, (lambda name: name == job_name) if job_name else None
+        api, jobslist, (lambda name: name == job_name) if job_name else None
     )
 
     if len(changes.delete) > 0 or len(changes.modify) > 0:
-        _delete_and_wait(conf, {*changes.delete, *changes.modify})
+        _delete_and_wait(api, {*changes.delete, *changes.modify})
 
     for n, job in enumerate(jobslist, start=1):
         if "name" not in job:
@@ -572,12 +597,12 @@ def op_load(conf: Conf, file: str, job_name: Optional[str]):
         if name not in changes.add and name not in changes.modify:
             continue
 
-        _load_job(conf, job, n)
+        _load_job(api, job, n)
 
 
-def op_restart(conf: Conf, name: str):
+def op_restart(api: ApiClient, name: str):
     try:
-        conf.session.post(conf.api_url + f"/restart/{name}")
+        api.session.post(api.api_url + f"/restart/{name}")
     except Exception as e:
         logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
         sys.exit(1)
@@ -612,7 +637,7 @@ def main():
         )
 
     try:
-        conf = Conf(args.cfg, args.cert, args.key)
+        api = ApiClient(args.cfg, args.cert, args.key)
     except TjfCliError:
         logging.exception("Failed to load configuration, please contact a Toolforge admin")
         sys.exit(1)
@@ -620,14 +645,14 @@ def main():
     logging.debug("session configuration generated correctly")
 
     if args.operation == "images":
-        op_images(conf)
+        op_images(api)
     elif args.operation == "containers":
         # TODO: remove this after a few months
         logging.warning("the `containers` action is deprecated. Use `images` instead.")
-        op_images(conf)
+        op_images(api)
     elif args.operation == "run":
         op_run(
-            conf=conf,
+            api=api,
             name=args.name,
             command=args.command,
             schedule=args.schedule,
@@ -643,20 +668,20 @@ def main():
             emails=args.emails,
         )
     elif args.operation == "show":
-        op_show(conf, args.name)
+        op_show(api, args.name)
     elif args.operation == "delete":
-        op_delete(conf, args.name)
+        op_delete(api, args.name)
     elif args.operation == "list":
         output_format = args.output
         if args.long:
             logging.warning("the `--long` flag is deprecated, use `--output long` instead")
             output_format = ListDisplayMode.LONG
-        op_list(conf, output_format)
+        op_list(api, output_format)
     elif args.operation == "flush":
-        op_flush(conf)
+        op_flush(api)
     elif args.operation == "load":
-        op_load(conf, args.file, args.job)
+        op_load(api, args.file, args.job)
     elif args.operation == "restart":
-        op_restart(conf, args.name)
+        op_restart(api, args.name)
 
     logging.debug("-- end of operations")

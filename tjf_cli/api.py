@@ -26,36 +26,8 @@ class TjfCliConfigLoadError(TjfCliError):
     """Raised when the configuration fails to load."""
 
 
-class Conf:
-    """
-    Class that represents the configuration for this CLI session
-    """
-
-    JOB_TABULATION_HEADERS_SHORT = {
-        "name": "Job name:",
-        "type": "Job type:",
-        "status_short": "Status:",
-    }
-
-    JOB_TABULATION_HEADERS_LONG = {
-        "name": "Job name:",
-        "cmd": "Command:",
-        "type": "Job type:",
-        "image": "Image:",
-        "filelog": "File log:",
-        "filelog_stdout": "Output log:",
-        "filelog_stderr": "Error log:",
-        "emails": "Emails:",
-        "resources": "Resources:",
-        "retry": "Retry:",
-        "status_short": "Status:",
-        "status_long": "Hints:",
-    }
-
-    IMAGES_TABULATION_HEADERS = {
-        "shortname": "Short name",
-        "image": "Container image URL",
-    }
+class ApiClient:
+    """Client to work with the jobs-framework API."""
 
     def __init__(self, cfg_file: str, cert_file: Optional[str], key_file: Optional[str]):
         """Constructor"""

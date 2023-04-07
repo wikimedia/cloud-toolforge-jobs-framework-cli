@@ -9,7 +9,7 @@ from typing import Callable, Dict, Optional, Set
 import pytest
 import requests
 
-from tjf_cli.conf import Conf
+from tjf_cli.api import ApiClient
 from tjf_cli.loader import calculate_changes, jobs_are_same
 
 SIMPLE_TEST_JOB = {
@@ -36,18 +36,18 @@ SIMPLE_TEST_JOB_API = {
 
 
 @pytest.fixture
-def mock_conf(requests_mock) -> Conf:
+def mock_api(requests_mock) -> ApiClient:
     api_base_url = "http://nonexistent"
 
     session = requests.Session()
     requests_mock.get(f"{api_base_url}/list/", json=[SIMPLE_TEST_JOB_API])
 
-    class FakeConf:
+    class FakeApi:
         def __init__(self, session, api_url) -> None:
             self.session = session
             self.api_url = api_url
 
-    yield FakeConf(session, api_base_url)
+    yield FakeApi(session, api_base_url)
 
 
 def merge(first: Dict, second: Dict, unset=None) -> Dict:
@@ -154,7 +154,7 @@ def test_jobs_are_same(config: Dict, api: Dict, expected: bool):
 )
 def test_calculate_changes(
     caplog,
-    mock_conf: Conf,
+    mock_api: ApiClient,
     jobs_data: Dict,
     filter: Optional[Callable[[str], bool]],
     add: Set[str],
@@ -162,7 +162,7 @@ def test_calculate_changes(
     delete: Set[str],
     yaml_warning,
 ):
-    result = calculate_changes(mock_conf, jobs_data, filter)
+    result = calculate_changes(mock_api, jobs_data, filter)
 
     assert result.add == add
     assert result.modify == modify

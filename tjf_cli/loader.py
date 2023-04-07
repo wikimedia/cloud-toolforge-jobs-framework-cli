@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from logging import getLogger
 from typing import Callable, Dict, Optional, Set
 
-from tjf_cli.conf import Conf
+from tjf_cli.api import ApiClient
 
 LOGGER = getLogger(__name__)
 
@@ -88,7 +88,7 @@ def jobs_are_same(job_config: Dict, api_obj: Dict) -> bool:
 
 
 def calculate_changes(
-    conf: Conf, configured_job_data: Dict, filter: Optional[Callable[[str], bool]]
+    conf: ApiClient, configured_job_data: Dict, filter: Optional[Callable[[str], bool]]
 ) -> LoadChanges:
     for job in configured_job_data:
         for key in job:

@@ -1,3 +1,25 @@
+toolforge-jobs-framework-cli (11) buster; urgency=medium
+
+  [ Taavi Väänänen ]
+  * [b606fd3] cmd-checklist-runner: format with black
+  * [c26bae5] tox: pytest: install in editable mode
+  * [c2ef1ac] loader: add handling for the retry default value
+
+  [ Arturo Borrero Gonzalez ]
+  * [6af7a85] cli: drop unused _flush_and_wait() function
+  * [10fc50c] tests: add support for new api-gateway setup
+  * [a8e5383] cli: introduce support for lima-kilo latest isolation setup
+
+  [ Taavi Väänänen ]
+  * [0be49cd] cli: list: use a more general --output flag
+  * [22f878c] tox: remove skipdist
+  * [2c8d855] conf: Raise proper errors instead of quitting directly
+  * [87b8af7] conf: rename as api
+  * [efff4c7] api: add wrappers for http requests
+  * [4dc1bee] Overhaul error handling
+
+ -- Arturo Borrero Gonzalez <aborrero@wikimedia.org>  Tue, 11 Apr 2023 16:21:46 +0200
+
 toolforge-jobs-framework-cli (10) buster; urgency=medium
 
   [ Arturo Borrero Gonzalez ]

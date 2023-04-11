@@ -14,6 +14,12 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import json
+from logging import getLogger
+from typing import Any, Dict
+
+LOGGER = getLogger(__name__)
+
 
 class TjfCliError(Exception):
     """Custom error class for jobs-framework-cli errors."""
@@ -21,3 +27,18 @@ class TjfCliError(Exception):
     def __init__(self, message: str, *args) -> None:
         super().__init__(message, *args)
         self.message = message
+
+    context: Dict[str, Any] = {}
+
+
+class TjfCliUserError(TjfCliError):
+    """Custom error class for jobs-framework-cli errors from user actions like invalid input."""
+
+
+def print_error_context(error: TjfCliError):
+    if len(error.context.keys()) == 0:
+        return
+
+    LOGGER.error("Some additional context for the issue follows:")
+    for k, v in error.context.items():
+        LOGGER.error(" %s = %s", k, json.dumps(v))

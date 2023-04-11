@@ -4,7 +4,6 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
-import sys
 from dataclasses import dataclass
 from logging import getLogger
 from typing import Callable, Dict, Optional, Set
@@ -99,13 +98,7 @@ def calculate_changes(
         job["name"]: job for job in configured_job_data if not filter or filter(job["name"])
     }
 
-    try:
-        response = conf.get("/list/")
-        response.raise_for_status()
-        current_job_data = response.json()
-    except Exception:
-        LOGGER.exception("Could not load data about current jobs. Contact a Toolforge admin.")
-        sys.exit(1)
+    current_job_data = conf.get("/list/").json()
 
     current_jobs = {
         job["name"]: job for job in current_job_data if not filter or filter(job["name"])

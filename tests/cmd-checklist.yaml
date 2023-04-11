@@ -120,7 +120,7 @@
     - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} delete ${NORMALJOBNAME}
       retcode: 0
     - cmd: sleep ${SLEEP}
-    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${NORMALJOBNAME} | grep ERROR | grep -q "job '${NORMALJOBNAME}' does not exist"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${NORMALJOBNAME} | grep ERROR | grep -q "Job '${NORMALJOBNAME}' does not exist"
       retcode: 0
 
 - name: run retried job with retry not within acceptable values should fail
@@ -157,7 +157,7 @@
     - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} delete ${NORMALJOBNAME}
       retcode: 0
     - cmd: sleep ${SLEEP}
-    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${NORMALJOBNAME} | grep ERROR | grep -q "job '${NORMALJOBNAME}' does not exist"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${NORMALJOBNAME} | grep ERROR | grep -q "Job '${NORMALJOBNAME}' does not exist"
       retcode: 0
 
 - name: job with non-default resource allocation
@@ -189,7 +189,7 @@
     - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} delete ${SCHEDJOBNAME}
       retcode: 0
     - cmd: sleep ${SLEEP}
-    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${SCHEDJOBNAME} | grep ERROR | grep -q "job '${SCHEDJOBNAME}' does not exist"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${SCHEDJOBNAME} | grep ERROR | grep -q "Job '${SCHEDJOBNAME}' does not exist"
       retcode: 0
 
 - name: run continuous job
@@ -212,7 +212,7 @@
     - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} delete ${CONTJOBNAME}
       retcode: 0
     - cmd: sleep ${SLEEP}
-    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${CONTJOBNAME} | grep ERROR | grep -q "job '${CONTJOBNAME}' does not exist"
+    - cmd: ${BIN} ${TLS} --cfg ${CFGFILE} show ${CONTJOBNAME} | grep ERROR | grep -q "Job '${CONTJOBNAME}' does not exist"
       retcode: 0
 
 - name: normal job produces file logs

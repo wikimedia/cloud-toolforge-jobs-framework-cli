@@ -17,7 +17,7 @@ from typing import Any, Dict, Optional
 import requests
 import yaml
 
-from tjf_cli.errors import TjfCliError
+from tjf_cli.errors import TjfCliError, TjfCliUserError
 
 LOGGER = getLogger(__name__)
 
@@ -26,12 +26,53 @@ class TjfCliConfigLoadError(TjfCliError):
     """Raised when the configuration fails to load."""
 
 
+class TjfCliHttpError(TjfCliError):
+    """Raised when a HTTP request fails."""
+
+    def __init__(self, message: str, status_code: int, context: Dict[str, Any]) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+        self.context = context
+
+
+class TjfCliHttpUserError(TjfCliHttpError, TjfCliUserError):
+    """Raised when a HTTP request fails with a 4xx status code."""
+
+
 def _find_cfg_obj(config: Dict[str, Any], kind: str, name: str):
     """Lookup a named object in our config."""
     for obj in config[kind]:
         if obj["name"] == name:
             return obj[kind[:-1]]
     raise TjfCliConfigLoadError(f"Key '{name}' not found in '{kind}' section of config")
+
+
+def _make_http_error(original: requests.exceptions.HTTPError) -> TjfCliHttpError:
+    error_class = (
+        TjfCliHttpUserError
+        if (original.response.status_code >= 400 and original.response.status_code <= 499)
+        else TjfCliHttpError
+    )
+
+    message = original.response.text
+    context = {}
+    try:
+        json = original.response.json()
+        if isinstance(json, dict):
+            if "error" in json:
+                message = json["error"]
+            elif "message" in json:
+                # flask-restful internal errors use this format
+                message = json["message"]
+
+            if "data" in json:
+                context = json["data"]
+        elif isinstance(json, str):
+            message = json
+    except requests.exceptions.InvalidJSONError:
+        pass
+
+    return error_class(message=message, status_code=original.response.status_code, context=context)
 
 
 class ApiClient:
@@ -121,8 +162,13 @@ class ApiClient:
         return kwargs
 
     def _make_request(self, method: str, url_path: str, **kwargs) -> requests.Response:
-        response = self._session.request(method, **self._make_kwargs(url_path, **kwargs))
-        return response
+        try:
+            response = self._session.request(method, **self._make_kwargs(url_path, **kwargs))
+            response.raise_for_status()
+            return response
+        except requests.exceptions.HTTPError as e:
+            new_error = _make_http_error(e)
+            raise new_error from e
 
     def get(self, url_path: str, **kwargs) -> requests.Response:
         """Make a GET request."""

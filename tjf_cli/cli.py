@@ -20,12 +20,11 @@ import getpass
 import urllib3
 import logging
 import time
-import json
 import yaml
 import sys
 
-from tjf_cli.api import ApiClient
-from tjf_cli.errors import TjfCliError
+from tjf_cli.api import ApiClient, TjfCliHttpUserError
+from tjf_cli.errors import TjfCliError, TjfCliUserError, print_error_context
 from tjf_cli.loader import calculate_changes
 
 # TODO: disable this for now, review later
@@ -34,6 +33,10 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # for --wait: 5 minutes timeout, check every 5 seconds
 WAIT_TIMEOUT = 60 * 5
 WAIT_SLEEP = 5
+
+
+EXIT_USER_ERROR = 1
+EXIT_INTERNAL_ERROR = 2
 
 
 JOB_TABULATION_HEADERS_SHORT = {
@@ -232,27 +235,12 @@ def parse_args():
 
 
 def op_images(api: ApiClient):
-    try:
-        response = api.get("/images/")
-    except Exception as e:
-        logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
-        sys.exit(1)
-
-    if response.status_code != 200:
-        logging.error(f"unable to fetch information. Contact a Toolforge admin: {response.text}")
-        sys.exit(1)
-
-    try:
-        images = json.loads(response.text)
-    except Exception as e:
-        logging.error(f"couldn't parse information from the API. Contact a Toolforge admin: {e}")
-        sys.exit(1)
+    images = api.get("/images/").json()
 
     try:
         output = tabulate(images, headers=IMAGES_TABULATION_HEADERS, tablefmt="pretty")
     except Exception as e:
-        logging.error(f"couldn't format information from the API. Contact a Toolforge admin: {e}")
-        sys.exit(1)
+        raise TjfCliError("Failed to format image table") from e
 
     print(output)
 
@@ -314,22 +302,7 @@ def job_prepare_for_output(api: ApiClient, job, headers: List[str], suppress_hin
 
 
 def _list_jobs(api: ApiClient):
-    try:
-        response = api.get("/list/")
-    except Exception as e:
-        logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
-        sys.exit(1)
-
-    if response.status_code != 200:
-        logging.error(f"unable to fetch information. Contact a Toolforge admin: {response.text}")
-        sys.exit(1)
-
-    try:
-        list = json.loads(response.text)
-    except Exception as e:
-        logging.error(f"couldn't parse information from the API. Contact a Toolforge admin: {e}")
-        sys.exit(1)
-
+    list = api.get("/list/").json()
     return list
 
 
@@ -352,8 +325,7 @@ def op_list(api: ApiClient, output_format: ListDisplayMode):
 
         output = tabulate(list, headers=headers, tablefmt="pretty")
     except Exception as e:
-        logging.error(f"couldn't format information from the API. Contact a Toolforge admin: {e}")
-        sys.exit(1)
+        raise TjfCliError("Failed to format job table") from e
 
     print(output)
 
@@ -376,11 +348,11 @@ def _wait_for_job(api: ApiClient, name: str):
         if job["status_short"] == "Failed":
             logging.error(f"job '{name}' failed:")
             op_show(api, name)
-            sys.exit(1)
+            sys.exit(EXIT_USER_ERROR)
 
     logging.error(f"timed out {WAIT_TIMEOUT} seconds waiting for job '{name}' to complete:")
     op_show(api, name)
-    sys.exit(1)
+    sys.exit(EXIT_INTERNAL_ERROR)
 
 
 def op_run(
@@ -425,18 +397,12 @@ def op_run(
     logging.debug(f"payload: {payload}")
 
     try:
-        response = api.post("/run/", data=payload)
-    except Exception as e:
-        logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
-        sys.exit(1)
+        api.post("/run/", data=payload)
+    except TjfCliHttpUserError as e:
+        if e.status_code == 409:
+            raise TjfCliUserError("A job with this name already exists") from e
 
-    if response.status_code == 409:
-        logging.error(f"a job with the same name '{name}' exists already")
-        sys.exit(1)
-
-    if response.status_code >= 300:
-        logging.error(f"unable to create job: {response.text.strip()}")
-        sys.exit(1)
+        raise e
 
     logging.debug("job was created")
 
@@ -447,22 +413,15 @@ def op_run(
 def _show_job(api: ApiClient, name: str, missing_ok: bool):
     try:
         response = api.get(f"/show/{name}")
-    except Exception as e:
-        logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
-        sys.exit(1)
+        job = response.json()
+    except TjfCliHttpUserError as e:
+        if e.status_code == 404:
+            if missing_ok:
+                return None  # the job doesn't exist, but that's ok!
 
-    if response.status_code == 404:
-        if missing_ok:
-            return None  # the job doesn't exist, but that's ok!
+            raise TjfCliUserError(f"Job '{name}' does not exist") from e
 
-        logging.error(f"job '{name}' does not exist")
-        sys.exit(1)
-
-    try:
-        job = json.loads(response.text)
-    except Exception as e:
-        logging.error(f"couldn't parse information from the API. Contact a Toolforge admin: {e}")
-        sys.exit(1)
+        raise e
 
     logging.debug(f"job information from the API: {job}")
     return job
@@ -480,8 +439,7 @@ def op_show(api: ApiClient, name):
     try:
         output = tabulate(kvlist, tablefmt="grid")
     except Exception as e:
-        logging.error(f"couldn't format information from the API. Contact a Toolforge admin: {e}")
-        sys.exit(1)
+        raise TjfCliError("Failed to format job display") from e
 
     print(output)
 
@@ -489,20 +447,17 @@ def op_show(api: ApiClient, name):
 def op_delete(api: ApiClient, name: str):
     try:
         api.delete(f"/delete/{name}")
-    except Exception as e:
-        logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
-        sys.exit(1)
+    except TjfCliHttpUserError as e:
+        if e.status_code == 404:
+            logging.warning(f"job '{name}' does not exist")
+            return
+        raise e
 
-    logging.debug("job was deleted (if it existed anyway, we didn't check)")
+    logging.debug("job was deleted")
 
 
 def op_flush(api: ApiClient):
-    try:
-        api.delete("/flush/")
-    except Exception as e:
-        logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
-        sys.exit(1)
-
+    api.delete("/flush/")
     logging.debug("all jobs were flushed (if any existed anyway, we didn't check)")
 
 
@@ -521,9 +476,7 @@ def _delete_and_wait(api: ApiClient, names: Set[str]):
             # ok!
             return
 
-    logging.error("could not load new jobs")
-    logging.error(f"timed out ({WAIT_TIMEOUT} seconds) waiting for old jobs to be deleted")
-    sys.exit(1)
+    raise TjfCliError("Timed out while waiting for old jobs to be deleted")
 
 
 def _load_job(api: ApiClient, job: dict, n: int):
@@ -533,8 +486,9 @@ def _load_job(api: ApiClient, job: dict, n: int):
         command = job["command"]
         image = job["image"]
     except KeyError as e:
-        logging.error(f"Unable to load job number {n}. Missing configuration parameter {str(e)}")
-        sys.exit(1)
+        raise TjfCliUserError(
+            f"Unable to load job number {n}: missing configuration parameter {str(e)}"
+        ) from e
 
     # these are optional
     schedule = job.get("schedule", None)
@@ -575,8 +529,7 @@ def op_load(api: ApiClient, file: str, job_name: Optional[str]):
         with open(file) as f:
             jobslist = yaml.safe_load(f.read())
     except Exception as e:
-        logging.error(f"couldn't read YAML file '{file}': {e}")
-        sys.exit(1)
+        raise TjfCliUserError(f"Unable to parse yaml file '{file}'") from e
 
     logging.debug(f"loaded content from YAML file '{file}':")
     logging.debug(f"{jobslist}")
@@ -590,8 +543,9 @@ def op_load(api: ApiClient, file: str, job_name: Optional[str]):
 
     for n, job in enumerate(jobslist, start=1):
         if "name" not in job:
-            logging.error(f"Unable to load job number {n}. Missing configuration parameter name")
-            sys.exit(1)
+            raise TjfCliUserError(
+                f"Unable to load job number {n}: missing configuration parameter name"
+            )
 
         name = job["name"]
         if name not in changes.add and name not in changes.modify:
@@ -603,47 +557,15 @@ def op_load(api: ApiClient, file: str, job_name: Optional[str]):
 def op_restart(api: ApiClient, name: str):
     try:
         api.post(f"/restart/{name}")
-    except Exception as e:
-        logging.error(f"couldn't contact the API endpoint. Contact a Toolforge admin: {e}")
-        sys.exit(1)
+    except TjfCliHttpUserError as e:
+        if e.status_code == 404:
+            raise TjfCliUserError(f"Job '{name}' does not exist") from e
+        raise e
 
     logging.debug("job was restarted")
 
 
-def main():
-    args = parse_args()
-
-    logging_format = "%(levelname)s: %(message)s"
-    if args.debug:
-        logging_level = logging.DEBUG
-        logging_format = f"[%(asctime)s] [%(filename)s] {logging_format}"
-    else:
-        logging_level = logging.INFO
-
-    logging.addLevelName(
-        logging.WARNING, "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING)
-    )
-    logging.addLevelName(
-        logging.ERROR, "\033[1;31m%s\033[1;0m" % logging.getLevelName(logging.ERROR)
-    )
-    logging.basicConfig(
-        format=logging_format, level=logging_level, stream=sys.stdout, datefmt="%Y-%m-%d %H:%M:%S"
-    )
-
-    user = getpass.getuser()
-    if not user.startswith("tools.") and not user.startswith("toolsbeta."):
-        logging.warning(
-            "not running as the tool account? Likely to fail. Perhaps you forgot `become <tool>`?"
-        )
-
-    try:
-        api = ApiClient.create(args.cfg, args.cert, args.key)
-    except TjfCliError:
-        logging.exception("Failed to load configuration, please contact a Toolforge admin")
-        sys.exit(1)
-
-    logging.debug("session configuration generated correctly")
-
+def run_subcommand(args: argparse.Namespace, api: ApiClient):
     if args.operation == "images":
         op_images(api)
     elif args.operation == "containers":
@@ -683,5 +605,64 @@ def main():
         op_load(api, args.file, args.job)
     elif args.operation == "restart":
         op_restart(api, args.name)
+
+
+def main():
+    args = parse_args()
+
+    logging_format = "%(levelname)s: %(message)s"
+    if args.debug:
+        logging_level = logging.DEBUG
+        logging_format = f"[%(asctime)s] [%(filename)s] {logging_format}"
+    else:
+        logging_level = logging.INFO
+
+    logging.addLevelName(
+        logging.WARNING, "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING)
+    )
+    logging.addLevelName(
+        logging.ERROR, "\033[1;31m%s\033[1;0m" % logging.getLevelName(logging.ERROR)
+    )
+    logging.basicConfig(
+        format=logging_format, level=logging_level, stream=sys.stdout, datefmt="%Y-%m-%d %H:%M:%S"
+    )
+
+    user = getpass.getuser()
+    if not user.startswith("tools.") and not user.startswith("toolsbeta."):
+        logging.warning(
+            "not running as the tool account? Likely to fail. Perhaps you forgot `become <tool>`?"
+        )
+
+    try:
+        api = ApiClient.create(args.cfg, args.cert, args.key)
+    except TjfCliError:
+        logging.exception("Failed to load configuration, please contact a Toolforge admin")
+        sys.exit(1)
+
+    logging.debug("session configuration generated correctly")
+
+    try:
+        run_subcommand(args=args, api=api)
+    except TjfCliUserError as e:
+        logging.error(f"Error: {str(e)}")
+        if args.debug:
+            print_error_context(e)
+
+        sys.exit(EXIT_USER_ERROR)
+    except TjfCliError as e:
+        logging.exception("An internal error occured while executing this command.", exc_info=True)
+        if args.debug:
+            print_error_context(e)
+
+        # link is to https://wikitech.wikimedia.org/wiki/Help:Cloud_Services_communication
+        logging.error("Please report this issue to the Toolforge admins: https://w.wiki/6Zuu")
+
+        sys.exit(EXIT_INTERNAL_ERROR)
+    except Exception:
+        logging.exception("An internal error occured while executing this command.", exc_info=True)
+        # link is to https://wikitech.wikimedia.org/wiki/Help:Cloud_Services_communication
+        logging.error("Please report this issue to the Toolforge admins: https://w.wiki/6Zuu")
+
+        sys.exit(EXIT_INTERNAL_ERROR)
 
     logging.debug("-- end of operations")

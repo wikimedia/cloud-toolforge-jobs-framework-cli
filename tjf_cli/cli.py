@@ -551,7 +551,12 @@ def op_load(api: ApiClient, file: str, job_name: Optional[str]):
         if name not in changes.add and name not in changes.modify:
             continue
 
-        _load_job(api, job, n)
+        try:
+            _load_job(api, job, n)
+        except TjfCliUserError as e:
+            raise TjfCliUserError(f"Invalid job {name}: {str(e)}") from e
+        except Exception as e:
+            raise TjfCliError(f"Failed to load job {name}") from e
 
 
 def op_restart(api: ApiClient, name: str):

@@ -37,6 +37,9 @@ class TjfCliUserError(TjfCliError):
 
 def print_error_context(error: TjfCliError):
     if len(error.context.keys()) == 0:
+        if error.__cause__ and isinstance(error.__cause__, TjfCliError):
+            print_error_context(error.__cause__)
+
         return
 
     LOGGER.error("Some additional context for the issue follows:")

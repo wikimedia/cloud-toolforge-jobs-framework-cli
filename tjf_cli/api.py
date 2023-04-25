@@ -117,6 +117,10 @@ class ApiClient:
 
         LOGGER.debug(f"loaded kubeconfig file '{k8s_config_file}'")
 
+        # load the paths from the kubeconfig file relative to itself just like the
+        # official libraries
+        old_dir = os.curdir
+        os.chdir(os.path.dirname(k8s_config_file))
         session = requests.Session()
         try:
             context = _find_cfg_obj(k8s_config, "contexts", k8s_config["current-context"])
@@ -125,7 +129,7 @@ class ApiClient:
 
             cert = cert_file if cert_file else user["client-certificate"]
             key = key_file if key_file else user["client-key"]
-            session.cert = (cert, key)
+            session.cert = (os.path.realpath(cert), os.path.realpath(key))
         except KeyError as e:
             raise TjfCliConfigLoadError(
                 f"Missing key '{str(e)}' in Kubernetes config file '{k8s_config_file}'"
@@ -135,6 +139,7 @@ class ApiClient:
                 f"Failed to parse Kubernetes config file '{k8s_config_file}"
             ) from e
 
+        os.chdir(old_dir)
         host = socket.gethostname()
         pyrequest_ua = requests.utils.default_user_agent()
         session.headers.update(

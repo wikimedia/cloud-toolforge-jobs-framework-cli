@@ -42,7 +42,7 @@ def jobs_are_same(job_config: Dict, api_obj: Dict) -> bool:
 
     # TODO: some renames to make things easier. See also T327280
     api_obj["command"] = api_obj["cmd"]
-    api_obj["memory"] = api_obj.get("mem", None)
+    api_obj["mem"] = api_obj.get("memory", None)
     api_obj["filelog-stdout"] = api_obj.get("filelog_stdout", None)
     api_obj["filelog-stderr"] = api_obj.get("filelog_stderr", None)
 

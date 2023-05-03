@@ -77,11 +77,13 @@ class ListDisplayMode(Enum):
 
 
 def parse_args():
-    description = "Toolforge Jobs Framework, command line interface"
-    parser = argparse.ArgumentParser(description=description)
-
     toolforge_cli_in_use = "TOOLFORGE_CLI" in environ
     toolforge_cli_debug = environ.get("TOOLFORGE_DEBUG", "0") == "1"
+
+    description = "Toolforge Jobs Framework, command line interface"
+    parser = argparse.ArgumentParser(
+        description=description, prog="toolforge jobs" if toolforge_cli_in_use else None
+    )
 
     parser.add_argument(
         "--debug",

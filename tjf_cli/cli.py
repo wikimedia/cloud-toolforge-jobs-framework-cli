@@ -12,6 +12,7 @@
 #
 
 from enum import Enum
+from os import environ
 from tabulate import tabulate
 from typing import List, Optional, Set
 import textwrap
@@ -79,7 +80,16 @@ def parse_args():
     description = "Toolforge Jobs Framework, command line interface"
     parser = argparse.ArgumentParser(description=description)
 
-    parser.add_argument("--debug", action="store_true", help="activate debug mode")
+    toolforge_cli_in_use = "TOOLFORGE_CLI" in environ
+    toolforge_cli_debug = environ.get("TOOLFORGE_DEBUG", "0") == "1"
+
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help=argparse.SUPPRESS if toolforge_cli_in_use else "activate debug mode",
+        default=toolforge_cli_debug,
+    )
+
     parser.add_argument(
         "--cfg",
         default="/etc/toolforge-jobs-framework-cli.cfg",

@@ -83,20 +83,19 @@ def parse_args():
     parser.add_argument(
         "--cfg",
         default="/etc/toolforge-jobs-framework-cli.cfg",
-        help="YAML config for the CLI. Defaults to '%(default)s'. "
-        "Only useful for Toolforge admins.",
+        help=argparse.SUPPRESS,
     )
 
     parser.add_argument(
         "--cert",
         required=False,
-        help="override kubeconfig TLS cert path. Only useful for Toolforge admins.",
+        help=argparse.SUPPRESS,
     )
 
     parser.add_argument(
         "--key",
         required=False,
-        help="override kubeconfig TLS key path. Only useful for Toolforge admins.",
+        help=argparse.SUPPRESS,
     )
 
     subparser = parser.add_subparsers(

@@ -70,6 +70,11 @@ IMAGES_TABULATION_HEADERS = {
 class ListDisplayMode(Enum):
     NORMAL = "normal"
     LONG = "long"
+    NAME = "name"
+
+    def display_header(self) -> bool:
+        """Whether to display the table headers."""
+        return self != ListDisplayMode.NAME
 
     def __str__(self) -> str:
         """Needed to play nice with argparse."""
@@ -322,6 +327,11 @@ def op_list(api: ApiClient, output_format: ListDisplayMode):
 
     if len(list) == 0:
         logging.debug("no jobs to be listed")
+        return
+
+    if output_format == ListDisplayMode.NAME:
+        for job in list:
+            print(job["name"])
         return
 
     try:

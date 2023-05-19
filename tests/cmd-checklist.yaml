@@ -5,11 +5,12 @@
       TOOLHOME: ~/.local/toolforge-lima-kilo/chroot/data/project/tf-test
       CONTAINER: bullseye
       NORMALJOBNAME: test-job
-      TESTCMD: test-cmd.sh
       CUSTOM_LOG_FILE: custom-log-file
       SCHEDJOBNAME: test-sched-job
       CONTJOBNAME: test-cont-job
       LOADFILE: ./test-load.yaml
+      # this file is deployed by lima-kilo
+      TESTCMD: ./test-cmd.sh
 ---
 - name: prepare tests
   tests:
@@ -38,17 +39,7 @@
 
 - name: run normal job
   tests:
-    - cmd: |
-           cat << EOF > ${TOOLHOME}/${TESTCMD}
-           #!/bin/sh
-           echo stdout \$1
-           echo stderr >&2
-           sleep 20 # this is a simple script and exits faster than we can test it. this command slows it down
-           EOF
-      retcode: 0
-      stderr: ""
-    - cmd: chmod a+x ${TOOLHOME}/${TESTCMD}
-    - cmd: ${BIN} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER}
+    - cmd: ${BIN} run ${NORMALJOBNAME} --command "${TESTCMD} --withargs" --image ${CONTAINER}
       retcode: 0
 
 - name: show normal job
@@ -56,7 +47,7 @@
     - cmd: |
             response=$(${BIN} show ${NORMALJOBNAME})
             echo "$response" | egrep -q "Job name:"[[:space:]]*"\| ${NORMALJOBNAME}" \
-            && echo "$response" | egrep -q "Command:"[[:space:]]*"\| ./${TESTCMD} --withargs" \
+            && echo "$response" | egrep -q "Command:"[[:space:]]*"\| ${TESTCMD} --withargs" \
             && echo "$response" | egrep -q "Job type:"[[:space:]]*"\| normal" \
             && echo "$response" | egrep -q "Image:"[[:space:]]*"\| ${CONTAINER}" \
             && echo "$response" | egrep -q "File log:"[[:space:]]*"\| yes" \
@@ -83,7 +74,7 @@
     # predictable job list output
     - cmd: |
             ${BIN} list --long | grep ${NORMALJOBNAME} \
-            | grep "./${TESTCMD} --withargs" | grep "normal" | grep ${CONTAINER} \
+            | grep "${TESTCMD} --withargs" | grep "normal" | grep ${CONTAINER} \
             | egrep ""[[:space:]]"yes"[[:space:]]"" | grep ${NORMALJOBNAME}.out \
             | grep ${NORMALJOBNAME}.err | grep default | egrep ""[[:space:]]"none"[[:space:]]"" \
             | egrep ""[[:space:]]"no"[[:space:]]"" | grep default
@@ -108,7 +99,7 @@
 
 - name: run retried job with retry not within acceptable values should fail
   tests:
-    - cmd: ${BIN} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --retry 6
+    - cmd: ${BIN} run ${NORMALJOBNAME} --command "${TESTCMD} --withargs" --image ${CONTAINER} --retry 6
       retcode: 2
       stdout: ""
     - cmd: ${BIN} list | grep "Job name:" | wc -l
@@ -118,7 +109,7 @@
 
 - name: run retried job
   tests:
-    - cmd: ${BIN} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --retry 3
+    - cmd: ${BIN} run ${NORMALJOBNAME} --command "${TESTCMD} --withargs" --image ${CONTAINER} --retry 3
       retcode: 0
 
 - name: show retried job (check the "Retry" row)
@@ -145,7 +136,7 @@
 
 - name: job with non-default resource allocation
   tests:
-    - cmd: ${BIN} run ${NORMALJOBNAME} --command ./${TESTCMD} --image ${CONTAINER} --mem 100Mi --cpu 1
+    - cmd: ${BIN} run ${NORMALJOBNAME} --command ${TESTCMD} --image ${CONTAINER} --mem 100Mi --cpu 1
       retcode: 0
     - cmd: ${BIN} show ${NORMALJOBNAME} | grep Resources | grep mem | grep 100Mi | grep cpu | grep -q 1
       retcode: 0
@@ -154,7 +145,7 @@
 
 - name: run schedule job
   tests:
-    - cmd: ${BIN} run ${SCHEDJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --schedule "* * * * *"
+    - cmd: ${BIN} run ${SCHEDJOBNAME} --command "${TESTCMD} --withargs" --image ${CONTAINER} --schedule "* * * * *"
       retcode: 0
 
 - name: show schedule job
@@ -177,7 +168,7 @@
 
 - name: run continuous job
   tests:
-    - cmd: ${BIN} run ${CONTJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --continuous
+    - cmd: ${BIN} run ${CONTJOBNAME} --command "${TESTCMD} --withargs" --image ${CONTAINER} --continuous
       retcode: 0
 
 - name: show continuous job
@@ -200,7 +191,7 @@
 
 - name: normal job produces file logs
   tests:
-    - cmd: ${BIN} run ${NORMALJOBNAME}2 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --wait
+    - cmd: ${BIN} run ${NORMALJOBNAME}2 --command "${TESTCMD} --withargs" --image ${CONTAINER} --wait
       retcode: 0
     - cmd: cat ${TOOLHOME}/${NORMALJOBNAME}2.out
       retcode: 0
@@ -211,7 +202,7 @@
 
 - name: normal job should log to single file
   tests:
-    - cmd: ${BIN} run ${NORMALJOBNAME}3 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --filelog-stdout ${CUSTOM_LOG_FILE}3.out --filelog-stderr ${CUSTOM_LOG_FILE}3.out --wait
+    - cmd: ${BIN} run ${NORMALJOBNAME}3 --command "${TESTCMD} --withargs" --image ${CONTAINER} --filelog-stdout ${CUSTOM_LOG_FILE}3.out --filelog-stderr ${CUSTOM_LOG_FILE}3.out --wait
       retcode: 0
     - cmd: grep -q "stdout --withargs" ${TOOLHOME}/${CUSTOM_LOG_FILE}3.out
       retcode: 0
@@ -224,7 +215,7 @@
 
 - name: normal job should log to custom-log-file4.out and custom-log-file4.err
   tests:
-    - cmd: ${BIN} run ${NORMALJOBNAME}4 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --filelog-stdout ${CUSTOM_LOG_FILE}4.out --filelog-stderr ${CUSTOM_LOG_FILE}4.err --wait
+    - cmd: ${BIN} run ${NORMALJOBNAME}4 --command "${TESTCMD} --withargs" --image ${CONTAINER} --filelog-stdout ${CUSTOM_LOG_FILE}4.out --filelog-stderr ${CUSTOM_LOG_FILE}4.err --wait
       retcode: 0
     - cmd: grep -q "stdout --withargs" ${TOOLHOME}/${CUSTOM_LOG_FILE}4.out
       retcode: 0
@@ -235,7 +226,7 @@
 
 - name: normal job with --no-filelog doesn't produce any log
   tests:
-    - cmd: ${BIN} run ${NORMALJOBNAME}5 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --no-filelog --wait
+    - cmd: ${BIN} run ${NORMALJOBNAME}5 --command "${TESTCMD} --withargs" --image ${CONTAINER} --no-filelog --wait
       retcode: 0
     - cmd: ls ${TOOLHOME}/${NORMALJOBNAME}5.out
       retcode: 2
@@ -246,7 +237,7 @@
 
 - name: normal job with --no-filelog doesn't produce any log
   tests:
-    - cmd: ${BIN} run ${NORMALJOBNAME}3 --command "./${TESTCMD} --withargs" --image ${CONTAINER} --no-filelog --wait
+    - cmd: ${BIN} run ${NORMALJOBNAME}3 --command "${TESTCMD} --withargs" --image ${CONTAINER} --no-filelog --wait
       retcode: 0
     - cmd: ls ${TOOLHOME}/${NORMALJOBNAME}3.out
       retcode: 2
@@ -257,11 +248,11 @@
 
 - name: run 3 jobs, they are all listed together
   tests:
-    - cmd: ${BIN} run ${NORMALJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER}
+    - cmd: ${BIN} run ${NORMALJOBNAME} --command "${TESTCMD} --withargs" --image ${CONTAINER}
       retcode: 0
-    - cmd: ${BIN} run ${CONTJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --continuous
+    - cmd: ${BIN} run ${CONTJOBNAME} --command "${TESTCMD} --withargs" --image ${CONTAINER} --continuous
       retcode: 0
-    - cmd: ${BIN} run ${SCHEDJOBNAME} --command "./${TESTCMD} --withargs" --image ${CONTAINER} --schedule "* * * * *"
+    - cmd: ${BIN} run ${SCHEDJOBNAME} --command "${TESTCMD} --withargs" --image ${CONTAINER} --schedule "* * * * *"
       retcode: 0
     - cmd: ${BIN} list --long | grep ${CONTAINER} | wc -l
       retcode: 0
@@ -274,19 +265,19 @@
            ---
            # autogenerated file by the testsuite
            - name: ${SCHEDJOBNAME}
-             command: ./${TESTCMD} --withargs
+             command: ${TESTCMD} --withargs
              image: ${CONTAINER}
              no-filelog: true
              schedule: "* * * * *"
              emails: onfinish
            - image: ${CONTAINER}
              name: ${CONTJOBNAME}
-             command: ./${TESTCMD} --withargs
+             command: ${TESTCMD} --withargs
              continuous: true
              emails: onfailure
            - name: ${NORMALJOBNAME}
              image: ${CONTAINER}
-             command: ./${TESTCMD} --withargs
+             command: ${TESTCMD} --withargs
              wait: true
              retry: 3
              emails: all

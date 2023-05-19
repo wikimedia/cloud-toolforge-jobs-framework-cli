@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from logging import getLogger
 from typing import Callable, Dict, Optional, Set
 
-from tjf_cli.api import ApiClient
+from toolforge_weld.api_client import ToolforgeClient
 
 LOGGER = getLogger(__name__)
 
@@ -87,7 +87,7 @@ def jobs_are_same(job_config: Dict, api_obj: Dict) -> bool:
 
 
 def calculate_changes(
-    conf: ApiClient, configured_job_data: Dict, filter: Optional[Callable[[str], bool]]
+    conf: ToolforgeClient, configured_job_data: Dict, filter: Optional[Callable[[str], bool]]
 ) -> LoadChanges:
     for job in configured_job_data:
         for key in job:
@@ -98,7 +98,7 @@ def calculate_changes(
         job["name"]: job for job in configured_job_data if not filter or filter(job["name"])
     }
 
-    current_job_data = conf.get("/list/").json()
+    current_job_data = conf.get("/list/")
 
     current_jobs = {
         job["name"]: job for job in current_job_data if not filter or filter(job["name"])

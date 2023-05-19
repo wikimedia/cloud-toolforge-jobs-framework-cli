@@ -5,9 +5,6 @@
 # the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
 #
-# Some funcionts of this code were copy-pasted from the tools-webservice package.
-# Copyright on that TBD.
-#
 # This program is the command line interface part of the Toolforge Jobs Framework.
 #
 
@@ -20,11 +17,15 @@ import argparse
 import getpass
 import urllib3
 import logging
+import socket
 import time
 import yaml
 import sys
 
-from tjf_cli.api import ApiClient, TjfCliHttpUserError
+from toolforge_weld.api_client import ToolforgeClient
+from toolforge_weld.kubernetes_config import Kubeconfig
+
+from tjf_cli.api import TjfCliHttpUserError, TjfCliConfigLoadError, handle_http_exception
 from tjf_cli.errors import TjfCliError, TjfCliUserError, print_error_context
 from tjf_cli.loader import calculate_changes
 
@@ -250,8 +251,8 @@ def parse_args():
     return parser.parse_args()
 
 
-def op_images(api: ApiClient):
-    images = api.get("/images/").json()
+def op_images(api: ToolforgeClient):
+    images = api.get("/images/")
 
     try:
         output = tabulate(images, headers=IMAGES_TABULATION_HEADERS, tablefmt="pretty")
@@ -261,7 +262,7 @@ def op_images(api: ApiClient):
     print(output)
 
 
-def job_prepare_for_output(api: ApiClient, job, headers: List[str], suppress_hints=True):
+def job_prepare_for_output(api: ToolforgeClient, job, headers: List[str], suppress_hints=True):
     schedule = job.get("schedule", None)
     cont = job.get("continuous", None)
     retry = job.get("retry")
@@ -317,12 +318,11 @@ def job_prepare_for_output(api: ApiClient, job, headers: List[str], suppress_hin
         job[newkey] = job.pop(oldkey, "Unknown")
 
 
-def _list_jobs(api: ApiClient):
-    list = api.get("/list/").json()
-    return list
+def _list_jobs(api: ToolforgeClient):
+    return api.get("/list/")
 
 
-def op_list(api: ApiClient, output_format: ListDisplayMode):
+def op_list(api: ToolforgeClient, output_format: ListDisplayMode):
     list = _list_jobs(api)
 
     if len(list) == 0:
@@ -351,7 +351,7 @@ def op_list(api: ApiClient, output_format: ListDisplayMode):
     print(output)
 
 
-def _wait_for_job(api: ApiClient, name: str):
+def _wait_for_job(api: ToolforgeClient, name: str):
     curtime = starttime = time.time()
     while curtime - starttime < WAIT_TIMEOUT:
         time.sleep(WAIT_SLEEP)
@@ -377,7 +377,7 @@ def _wait_for_job(api: ApiClient, name: str):
 
 
 def op_run(
-    api: ApiClient,
+    api: ToolforgeClient,
     name: str,
     command: str,
     schedule: Optional[str],
@@ -431,10 +431,9 @@ def op_run(
         _wait_for_job(api, name)
 
 
-def _show_job(api: ApiClient, name: str, missing_ok: bool):
+def _show_job(api: ToolforgeClient, name: str, missing_ok: bool):
     try:
-        response = api.get(f"/show/{name}")
-        job = response.json()
+        job = api.get(f"/show/{name}")
     except TjfCliHttpUserError as e:
         if e.status_code == 404:
             if missing_ok:
@@ -448,7 +447,7 @@ def _show_job(api: ApiClient, name: str, missing_ok: bool):
     return job
 
 
-def op_show(api: ApiClient, name):
+def op_show(api: ToolforgeClient, name):
     job = _show_job(api, name, missing_ok=False)
     job_prepare_for_output(api, job, suppress_hints=False, headers=JOB_TABULATION_HEADERS_LONG)
 
@@ -465,7 +464,7 @@ def op_show(api: ApiClient, name):
     print(output)
 
 
-def op_delete(api: ApiClient, name: str):
+def op_delete(api: ToolforgeClient, name: str):
     try:
         api.delete(f"/delete/{name}")
     except TjfCliHttpUserError as e:
@@ -477,12 +476,12 @@ def op_delete(api: ApiClient, name: str):
     logging.debug("job was deleted")
 
 
-def op_flush(api: ApiClient):
+def op_flush(api: ToolforgeClient):
     api.delete("/flush/")
     logging.debug("all jobs were flushed (if any existed anyway, we didn't check)")
 
 
-def _delete_and_wait(api: ApiClient, names: Set[str]):
+def _delete_and_wait(api: ToolforgeClient, names: Set[str]):
     for name in names:
         op_delete(api, name)
 
@@ -500,7 +499,7 @@ def _delete_and_wait(api: ApiClient, names: Set[str]):
     raise TjfCliError("Timed out while waiting for old jobs to be deleted")
 
 
-def _load_job(api: ApiClient, job: dict, n: int):
+def _load_job(api: ToolforgeClient, job: dict, n: int):
     # these are mandatory
     try:
         name = job["name"]
@@ -545,7 +544,7 @@ def _load_job(api: ApiClient, job: dict, n: int):
     )
 
 
-def op_load(api: ApiClient, file: str, job_name: Optional[str]):
+def op_load(api: ToolforgeClient, file: str, job_name: Optional[str]):
     try:
         with open(file) as f:
             jobslist = yaml.safe_load(f.read())
@@ -580,7 +579,7 @@ def op_load(api: ApiClient, file: str, job_name: Optional[str]):
             raise TjfCliError(f"Failed to load job {name}") from e
 
 
-def op_restart(api: ApiClient, name: str):
+def op_restart(api: ToolforgeClient, name: str):
     try:
         api.post(f"/restart/{name}")
     except TjfCliHttpUserError as e:
@@ -591,7 +590,7 @@ def op_restart(api: ApiClient, name: str):
     logging.debug("job was restarted")
 
 
-def run_subcommand(args: argparse.Namespace, api: ApiClient):
+def run_subcommand(args: argparse.Namespace, api: ToolforgeClient):
     if args.operation == "images":
         op_images(api)
     elif args.operation == "containers":
@@ -660,10 +659,23 @@ def main():
         )
 
     try:
-        api = ApiClient.create(args.cfg, args.cert, args.key)
-    except TjfCliError:
-        logging.exception("Failed to load configuration, please contact a Toolforge admin")
-        sys.exit(1)
+        kubeconfig = Kubeconfig.load()
+        host = socket.gethostname()
+        user_agent = f"{kubeconfig.current_namespace}@{host}"
+
+        with open(args.cfg) as f:
+            cfg = yaml.safe_load(f.read())
+
+        server = cfg["api_url"]
+    except Exception as e:
+        raise TjfCliConfigLoadError(f"Failed to read config file '{args.cfg}'") from e
+
+    api = ToolforgeClient(
+        server=server,
+        exception_handler=handle_http_exception,
+        user_agent=user_agent,
+        kubeconfig=kubeconfig,
+    )
 
     logging.debug("session configuration generated correctly")
 

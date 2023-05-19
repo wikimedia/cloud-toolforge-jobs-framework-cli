@@ -9,5 +9,5 @@ setup(
     packages=find_packages(),
     entry_points={"console_scripts": ["toolforge-jobs = tjf_cli.cli:main"]},
     description="Command line interface for the Toolforge Jobs framework",
-    install_requires=["PyYAML", "requests", "tabulate"],
+    install_requires=["PyYAML", "requests", "tabulate", "toolforge-weld"],
 )

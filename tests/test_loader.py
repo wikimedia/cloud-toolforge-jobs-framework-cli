@@ -7,10 +7,12 @@
 from typing import Callable, Dict, Optional, Set
 
 import pytest
-import requests
 
-from tjf_cli.api import ApiClient
+from toolforge_weld.api_client import ToolforgeClient
+from toolforge_weld.kubernetes_config import fake_kube_config
+
 from tjf_cli.loader import calculate_changes, jobs_are_same
+from tjf_cli.api import handle_http_exception
 
 SIMPLE_TEST_JOB = {
     "name": "test-job",
@@ -35,14 +37,18 @@ SIMPLE_TEST_JOB_API = {
 }
 
 
-@pytest.fixture
-def mock_api(requests_mock) -> ApiClient:
-    api_url = "http://nonexistent"
+@pytest.fixture()
+def mock_api(requests_mock) -> ToolforgeClient:
+    server = "http://nonexistent"
 
-    session = requests.Session()
-    requests_mock.get(f"{api_url}/list/", json=[SIMPLE_TEST_JOB_API])
+    requests_mock.get(f"{server}/list/", json=[SIMPLE_TEST_JOB_API])
 
-    yield ApiClient(session=session, api_url=api_url)
+    yield ToolforgeClient(
+        server=server,
+        user_agent="xyz",
+        kubeconfig=fake_kube_config(),
+        exception_handler=handle_http_exception,
+    )
 
 
 def merge(first: Dict, second: Dict, unset=None) -> Dict:
@@ -149,7 +155,7 @@ def test_jobs_are_same(config: Dict, api: Dict, expected: bool):
 )
 def test_calculate_changes(
     caplog,
-    mock_api: ApiClient,
+    mock_api: ToolforgeClient,
     jobs_data: Dict,
     filter: Optional[Callable[[str], bool]],
     add: Set[str],

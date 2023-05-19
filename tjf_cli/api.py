@@ -102,8 +102,6 @@ class ApiClient:
 
         kubeconfig = cfg.get("kubeconfig", "~/.kube/config")
         customhdr = cfg.get("customhdr", None)
-        customaddr = cfg.get("customaddr", None)
-        customfqdn = cfg.get("customfqdn", None)
 
         k8s_config_file = os.path.expanduser(kubeconfig)
 
@@ -151,11 +149,6 @@ class ApiClient:
 
         # don't verify server-side TLS for now
         session.verify = False
-
-        if customaddr is not None and customfqdn is not None:
-            from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
-
-            session.mount(f"https://{customfqdn}", ForcedIPHTTPSAdapter(dest_ip=customaddr))
 
         return cls(
             session=session,

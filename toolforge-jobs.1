@@ -1,12 +1,12 @@
 .\" (C) Copyright 2023 Arturo Borrero Gonzalez <aborrero@wikimedia.org>
 .\"
-.TH TOOLFORGE-JOBS-FRAMEWORK 1 "May 19 2023"
+.TH TOOLFORGE-JOBS-FRAMEWORK 1 "June 7 2023"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .SH NAME
 toolforge-jobs-framework-cli \- command line interface for the Toolforge Jobs Framework
 .SH SYNOPSIS
-.B toolforge-jobs [options] {images,run,show,list,delete,flush,load,restart} ...
+.B toolforge-jobs [options] {images,run,show,list,delete,flush,load,restart,quota} ...
 .SH DESCRIPTION
 The \fBtoolforge-jobs\fP command line interface allows you to interact with the \fBToolforge
 Jobs Framework\fP.
@@ -233,6 +233,10 @@ exists) a single job only.
 .TP
 .B restart NAME
 Restarts a currently running job. Only continuous and cron jobs are supported.
+
+.TP
+.B quota
+Displays quota information for the current tool.
 
 .SH OPTIONS
 Normal users wont need any of these options, which are mostly for Toolforge administrators, and

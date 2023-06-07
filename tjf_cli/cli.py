@@ -248,6 +248,8 @@ def parse_args():
     restartparser = subparser.add_parser("restart", help="restarts a running job")
     restartparser.add_argument("name", help="job name")
 
+    subparser.add_parser("quota", help="display quota information")
+
     return parser.parse_args()
 
 
@@ -590,6 +592,31 @@ def op_restart(api: ToolforgeClient, name: str):
     logging.debug("job was restarted")
 
 
+def op_quota(api: ToolforgeClient):
+    data = api.get("/quota/")
+
+    logging.debug("Got quota data: %s", data)
+
+    for i, category in enumerate(data["categories"]):
+        if i != 0:
+            # Empty line to separate categories
+            print()
+
+        has_used = "used" in category["items"][0]
+        items = [
+            (
+                # use category["name"] as the header of the
+                # first column to indicate category names
+                {category["name"]: item["name"], "Used": item["used"], "Limit": item["limit"]}
+                if has_used
+                else {category["name"]: item["name"], "Limit": item["limit"]}
+            )
+            for item in category["items"]
+        ]
+
+        print(tabulate(items, tablefmt="simple", headers="keys"))
+
+
 def run_subcommand(args: argparse.Namespace, api: ToolforgeClient):
     if args.operation == "images":
         op_images(api)
@@ -630,6 +657,8 @@ def run_subcommand(args: argparse.Namespace, api: ToolforgeClient):
         op_load(api, args.file, args.job)
     elif args.operation == "restart":
         op_restart(api, args.name)
+    elif args.operation == "quota":
+        op_quota(api)
 
 
 def main():

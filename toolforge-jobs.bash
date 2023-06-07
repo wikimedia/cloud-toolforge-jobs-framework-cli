@@ -15,7 +15,7 @@ _toolforge_jobs() {
 			if [[ $cur == -* ]]; then
 				COMPREPLY=($(compgen -W "--help" -- ${cur}))
 			else
-				COMPREPLY=($(compgen -W "images run show list delete flush load restart" -- ${cur}))
+				COMPREPLY=($(compgen -W "images run show list delete flush load restart quota" -- ${cur}))
 			fi
 			;;
 		**)
@@ -144,6 +144,9 @@ _toolforge_jobs() {
 					else
 						COMPREPLY=()
 					fi
+					;;
+				quota)
+					COMPREPLY=()
 					;;
 				**)
 					COMPREPLY=()

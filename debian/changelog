@@ -1,3 +1,37 @@
+toolforge-jobs-framework-cli (12) UNRELEASED; urgency=medium
+
+  [ Arturo Borrero Gonzalez ]
+  * [cee44da] d/source/options: prevent .tox directory to be present in the source package
+
+  [ Taavi Väänänen ]
+  * [25930c2] errors: Print context of parent if necessary
+  * [9c0c85e] cli: Print which job failed to load
+
+  [ David Caro ]
+  * [d08f7fd] k8s: allow loading relative kubeconfig certs
+
+  [ Siddharth VP ]
+  * [7953469] Fix memory flag normalization while comparing job config with API output
+
+  [ Taavi Väänänen ]
+  * [010d465] cli: Hide admin-only options from --help output
+  * [0333d78] cli: use debug env variable from toolforge-cli
+  * [c8f746a] cli: use 'toolforge jobs' as help command when used in the CLI
+  * [ea55b96] cli: list: add -o name
+  * [bb5a955] Add tab completion
+
+  [ Arturo Borrero Gonzalez ]
+  * [dfb0e42] tests/cmd-checklist: drop unused stuff
+  * [0c8d553] jobs-framework-cli: drop custom address support
+  * [442e1d7] tests/cmd-checklist: relocate test-cmd.sh file to lima-kilo
+  * [c8ac035] jobs-framework-cli: use toolforge-weld
+
+  [ Taavi Väänänen ]
+  * [17a1adf] Add quota subcommand
+  * [ca44f12] d/: add gbp.conf to set `gbp dch` options
+
+ -- Taavi Väänänen <hi@taavi.wtf>  Fri, 09 Jun 2023 19:25:02 +0300
+
 toolforge-jobs-framework-cli (11) buster; urgency=medium
 
   [ Taavi Väänänen ]

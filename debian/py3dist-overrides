@@ -1,0 +1,3 @@
+# see dh-python3(1)
+# toolforge-weld package is in tools repo, not publicly
+toolforge-weld python3-toolforge-weld

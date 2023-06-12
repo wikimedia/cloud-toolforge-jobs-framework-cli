@@ -1,7 +1,8 @@
-toolforge-jobs-framework-cli (12) UNRELEASED; urgency=medium
+toolforge-jobs-framework-cli (12) buster; urgency=medium
 
   [ Arturo Borrero Gonzalez ]
-  * [cee44da] d/source/options: prevent .tox directory to be present in the source package
+  * [cee44da] d/source/options: prevent .tox directory to be present in
+    the source package
 
   [ Taavi Väänänen ]
   * [25930c2] errors: Print context of parent if necessary
@@ -11,7 +12,8 @@ toolforge-jobs-framework-cli (12) UNRELEASED; urgency=medium
   * [d08f7fd] k8s: allow loading relative kubeconfig certs
 
   [ Siddharth VP ]
-  * [7953469] Fix memory flag normalization while comparing job config with API output
+  * [7953469] Fix memory flag normalization while comparing job config
+    with API output
 
   [ Taavi Väänänen ]
   * [010d465] cli: Hide admin-only options from --help output
@@ -29,8 +31,9 @@ toolforge-jobs-framework-cli (12) UNRELEASED; urgency=medium
   [ Taavi Väänänen ]
   * [17a1adf] Add quota subcommand
   * [ca44f12] d/: add gbp.conf to set `gbp dch` options
+  * [e7b0ea8] d/: configure py3dist-overrides for -weld
 
- -- Taavi Väänänen <hi@taavi.wtf>  Fri, 09 Jun 2023 19:25:02 +0300
+ -- Taavi Väänänen <hi@taavi.wtf>  Mon, 12 Jun 2023 11:03:23 +0300
 
 toolforge-jobs-framework-cli (11) buster; urgency=medium
 

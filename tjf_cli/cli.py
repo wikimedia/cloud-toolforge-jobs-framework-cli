@@ -104,18 +104,6 @@ def parse_args():
         help=argparse.SUPPRESS,
     )
 
-    parser.add_argument(
-        "--cert",
-        required=False,
-        help=argparse.SUPPRESS,
-    )
-
-    parser.add_argument(
-        "--key",
-        required=False,
-        help=argparse.SUPPRESS,
-    )
-
     subparser = parser.add_subparsers(
         help="possible operations (pass -h to know usage of each)",
         dest="operation",

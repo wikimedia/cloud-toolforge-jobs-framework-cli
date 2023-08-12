@@ -110,11 +110,6 @@ def parse_args():
         required=True,
     )
 
-    # TODO: remove this after a few months
-    subparser.add_parser(
-        "containers",
-        help="Kept for compatibility reasons, use `images` instead.",
-    )
     subparser.add_parser(
         "images",
         help="list information on available container image types for Toolforge jobs",
@@ -607,10 +602,6 @@ def op_quota(api: ToolforgeClient):
 
 def run_subcommand(args: argparse.Namespace, api: ToolforgeClient):
     if args.operation == "images":
-        op_images(api)
-    elif args.operation == "containers":
-        # TODO: remove this after a few months
-        logging.warning("the `containers` action is deprecated. Use `images` instead.")
         op_images(api)
     elif args.operation == "run":
         op_run(

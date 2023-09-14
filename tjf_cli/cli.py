@@ -683,6 +683,7 @@ def main():
         exception_handler=handle_http_exception,
         user_agent=user_agent,
         kubeconfig=kubeconfig,
+        timeout=cfg.get("timeout", 30),
     )
 
     logging.debug("session configuration generated correctly")

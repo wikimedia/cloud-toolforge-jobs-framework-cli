@@ -13,25 +13,26 @@ The help message:
 
 ```console
 $ toolforge-jobs --help
-usage: toolforge-jobs [-h] [--debug] [--cfg CFG] {containers,run,show,list,delete,flush,load} ...
+usage: toolforge-jobs [-h] [--debug] {images,run,show,list,delete,flush,load,restart,quota} ...
 
 Toolforge Jobs Framework, command line interface
 
 positional arguments:
-  {containers,run,show,list,delete,flush,load}
+  {images,run,show,list,delete,flush,load,restart,quota}
                         possible operations (pass -h to know usage of each)
-    containers          list information on available container types for Toolforge jobs
+    images              list information on available container image types for Toolforge jobs
     run                 run a new job of your own in Toolforge
     show                show details of a job of your own in Toolforge
     list                list all running jobs of your own in Toolforge
     delete              delete a running job of your own in Toolforge
     flush               delete all running jobs of your own in Toolforge
     load                flush all jobs and load a YAML file with job definitions and run them
+    restart             restarts a running job
+    quota               display quota information
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   --debug               activate debug mode
-  --cfg CFG             YAML config for the CLI. Defaults to '/etc/toolforge-jobs-framework-cli.cfg'. Only useful for Toolforge admins.
 ```
 
 More information at [Wikitech](https://wikitech.wikimedia.org/wiki/Help:Toolforge/Jobs_framework) and in the man page.

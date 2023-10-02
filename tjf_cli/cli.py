@@ -7,11 +7,13 @@
 #
 # This program is the command line interface part of the Toolforge Jobs Framework.
 #
+from __future__ import annotations
 
+from dataclasses import dataclass, field
 from enum import Enum
 from os import environ
 from tabulate import tabulate
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Any
 import textwrap
 import argparse
 import getpass
@@ -23,6 +25,7 @@ import yaml
 import sys
 
 from toolforge_weld.api_client import ToolforgeClient
+from toolforge_weld.config import Section, load_config
 from toolforge_weld.kubernetes_config import Kubeconfig
 
 from tjf_cli.api import TjfCliHttpUserError, TjfCliConfigLoadError, handle_http_exception
@@ -68,6 +71,22 @@ IMAGES_TABULATION_HEADERS = {
 }
 
 
+@dataclass
+class JobsConfig(Section):
+    _NAME_: str = field(default="jobs", init=False)
+    jobs_endpoint: str = "/jobs/api/v1"
+    timeout: int = 30
+
+    @classmethod
+    def from_dict(cls, my_dict: dict[str, Any]):
+        params = {}
+        if "jobs_endpoint" in my_dict:
+            params["jobs_endpoint"] = my_dict["jobs_endpoint"]
+        if "timeout" in my_dict:
+            params["timeout"] = my_dict["timeout"]
+        return cls(**params)
+
+
 class ListDisplayMode(Enum):
     NORMAL = "normal"
     LONG = "long"
@@ -96,12 +115,6 @@ def parse_args():
         action="store_true",
         help=argparse.SUPPRESS if toolforge_cli_in_use else "activate debug mode",
         default=toolforge_cli_debug,
-    )
-
-    parser.add_argument(
-        "--cfg",
-        default="/etc/toolforge-jobs-framework-cli.cfg",
-        help=argparse.SUPPRESS,
     )
 
     subparser = parser.add_subparsers(
@@ -671,19 +684,16 @@ def main():
         host = socket.gethostname()
         user_agent = f"{kubeconfig.current_namespace}@{host}"
 
-        with open(args.cfg) as f:
-            cfg = yaml.safe_load(f.read())
-
-        server = cfg["api_url"]
+        config = load_config("jobs-cli", extra_sections=[JobsConfig])
     except Exception as e:
-        raise TjfCliConfigLoadError(f"Failed to read config file '{args.cfg}'") from e
+        raise TjfCliConfigLoadError("Failed to load configuration") from e
 
     api = ToolforgeClient(
-        server=server,
+        server=f"{config.api_gateway.url}{config.jobs.jobs_endpoint}",
         exception_handler=handle_http_exception,
         user_agent=user_agent,
         kubeconfig=kubeconfig,
-        timeout=cfg.get("timeout", 30),
+        timeout=config.jobs.timeout,
     )
 
     logging.debug("session configuration generated correctly")

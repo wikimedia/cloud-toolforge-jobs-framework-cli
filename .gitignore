@@ -8,6 +8,5 @@ __pycache__/
 *.swp
 *.pem
 .virtualenv
-test-cfg.yaml
 test-load.yaml
 toolforge_jobs_framework_cli.egg-info/

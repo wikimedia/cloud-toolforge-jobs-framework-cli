@@ -6,7 +6,7 @@
 .SH NAME
 toolforge-jobs-framework-cli \- command line interface for the Toolforge Jobs Framework
 .SH SYNOPSIS
-.B toolforge-jobs [options] {images,run,show,list,delete,flush,load,restart,quota} ...
+.B toolforge-jobs [options] {images,run,show,logs,list,delete,flush,load,restart,quota} ...
 .SH DESCRIPTION
 The \fBtoolforge-jobs\fP command line interface allows you to interact with the \fBToolforge
 Jobs Framework\fP.
@@ -148,6 +148,10 @@ $ toolforge-jobs show myscheduledjob
 |            | 'waiting' for reason 'ContainerCreating'.                       |
 +------------+-----------------------------------------------------------------+
 .fi
+
+.TP
+.B logs [-f|--follow] [-l|--lat LAST] NAME
+Display log output from a currently running job.
 
 .TP
 .B list [-o|--output {normal,long}]

@@ -9,6 +9,7 @@
 #
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from enum import Enum
 from os import environ
@@ -201,6 +202,26 @@ def parse_args():
         help="show details of a job of your own in Toolforge",
     )
     showparser.add_argument("name", help="job name")
+
+    logs_parser = subparser.add_parser(
+        "logs",
+        help="show output from a running job",
+    )
+    logs_parser.add_argument("name", help="job name")
+    logs_parser.add_argument(
+        "-f",
+        "--follow",
+        required=False,
+        action="store_true",
+        help="stream updates",
+    )
+    logs_parser.add_argument(
+        "-l",
+        "--last",
+        required=False,
+        type=int,
+        help="number of recent log lines to display",
+    )
 
     listparser = subparser.add_parser(
         "list",
@@ -462,6 +483,22 @@ def op_show(api: ToolforgeClient, name):
     print(output)
 
 
+def op_logs(api: ToolforgeClient, name: str, follow: bool, last: Optional[int]):
+    params = {"follow": "true" if follow else "false"}
+    if last:
+        params["lines"] = last
+
+    try:
+        for raw_line in api.get_raw_lines(
+            f"/logs/{name}",
+            params=params,
+        ):
+            parsed = json.loads(raw_line)
+            print(f"{parsed['datetime']} [{parsed['pod']}] {parsed['message']}")
+    except KeyboardInterrupt:
+        pass
+
+
 def op_delete(api: ToolforgeClient, name: str):
     try:
         api.delete(f"/delete/{name}")
@@ -635,6 +672,8 @@ def run_subcommand(args: argparse.Namespace, api: ToolforgeClient):
         )
     elif args.operation == "show":
         op_show(api, args.name)
+    elif args.operation == "logs":
+        op_logs(api, args.name, args.follow, args.last)
     elif args.operation == "delete":
         op_delete(api, args.name)
     elif args.operation == "list":

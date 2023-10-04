@@ -15,7 +15,7 @@ _toolforge_jobs() {
 			if [[ $cur == -* ]]; then
 				COMPREPLY=($(compgen -W "--help" -- ${cur}))
 			else
-				COMPREPLY=($(compgen -W "images run show list delete flush load restart quota" -- ${cur}))
+				COMPREPLY=($(compgen -W "images run show logs list delete flush load restart quota" -- ${cur}))
 			fi
 			;;
 		**)
@@ -99,6 +99,41 @@ _toolforge_jobs() {
 					else
 						COMPREPLY=()
 					fi
+					;;
+				logs)
+					case "$prev" in
+						-l|--last)
+							COMPREPLY=()
+							;;
+						**)
+							local options="-f --follow -l --last"
+							local i=$((subcmd_index + 1))
+
+							local last_was_arg_with_param=0
+							local had_job_name=0
+
+							while ((i<COMP_CWORD)); do
+								if [[ "${COMP_WORDS[i]}" == "-f" || "${COMP_WORDS[i]}" == "--follow" ]]; then
+									options="${options/-f/}"
+									options="${options/--follow/}"
+								elif [[ "${COMP_WORDS[i]}" == "-l" || "${COMP_WORDS[i]}" == "--last" ]]; then
+									last_was_arg_with_param=1
+									options="${options/-l/}"
+									options="${options/--last/}"
+								elif [[ "$last_was_arg_with_param" == "0" ]]; then
+									had_job_name=1
+								fi
+
+								((++i))
+							done
+
+							if [[ $cur == -* || "$had_job_name" == "1" ]]; then
+								COMPREPLY=($(compgen -W "${options}" -- ${cur}))
+							else
+								COMPREPLY=($(compgen -W "$(toolforge jobs list -o name)" -- ${cur}))
+							fi
+							;;
+					esac
 					;;
 				list)
 					case "$prev" in

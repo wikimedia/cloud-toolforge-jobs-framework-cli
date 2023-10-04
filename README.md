@@ -13,16 +13,17 @@ The help message:
 
 ```console
 $ toolforge-jobs --help
-usage: toolforge-jobs [-h] [--debug] {images,run,show,list,delete,flush,load,restart,quota} ...
+usage: toolforge-jobs [-h] [--debug] {images,run,show,logs,list,delete,flush,load,restart,quota} ...
 
 Toolforge Jobs Framework, command line interface
 
 positional arguments:
-  {images,run,show,list,delete,flush,load,restart,quota}
+  {images,run,show,logs,list,delete,flush,load,restart,quota}
                         possible operations (pass -h to know usage of each)
     images              list information on available container image types for Toolforge jobs
     run                 run a new job of your own in Toolforge
     show                show details of a job of your own in Toolforge
+    logs                show output from a running job
     list                list all running jobs of your own in Toolforge
     delete              delete a running job of your own in Toolforge
     flush               delete all running jobs of your own in Toolforge

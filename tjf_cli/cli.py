@@ -414,13 +414,11 @@ def op_run(
     payload = {"name": name, "imagename": image, "cmd": command, "emails": emails, "retry": retry}
 
     if continuous:
-        payload["continuous"] = "true"
+        payload["continuous"] = True
     elif schedule:
         payload["schedule"] = schedule
 
-    if not no_filelog:
-        # the default is to request the filelog
-        payload["filelog"] = "true"
+    payload["filelog"] = not no_filelog
 
     if filelog_stdout:
         payload["filelog_stdout"] = filelog_stdout
@@ -437,7 +435,7 @@ def op_run(
     logging.debug(f"payload: {payload}")
 
     try:
-        api.post("/jobs/", data=payload)
+        api.post("/jobs/", json=payload)
     except TjfCliHttpUserError as e:
         if e.status_code == 409:
             raise TjfCliUserError("A job with this name already exists") from e

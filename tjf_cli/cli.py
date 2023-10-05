@@ -338,7 +338,7 @@ def job_prepare_for_output(api: ToolforgeClient, job, headers: List[str], suppre
 
 
 def _list_jobs(api: ToolforgeClient):
-    return api.get("/list/")
+    return api.get("/jobs/")
 
 
 def op_list(api: ToolforgeClient, output_format: ListDisplayMode):
@@ -437,7 +437,7 @@ def op_run(
     logging.debug(f"payload: {payload}")
 
     try:
-        api.post("/run/", data=payload)
+        api.post("/jobs/", data=payload)
     except TjfCliHttpUserError as e:
         if e.status_code == 409:
             raise TjfCliUserError("A job with this name already exists") from e
@@ -452,7 +452,7 @@ def op_run(
 
 def _show_job(api: ToolforgeClient, name: str, missing_ok: bool):
     try:
-        job = api.get(f"/show/{name}")
+        job = api.get(f"/jobs/{name}")
     except TjfCliHttpUserError as e:
         if e.status_code == 404:
             if missing_ok:
@@ -490,7 +490,7 @@ def op_logs(api: ToolforgeClient, name: str, follow: bool, last: Optional[int]):
 
     try:
         for raw_line in api.get_raw_lines(
-            f"/logs/{name}",
+            f"/jobs/{name}/logs",
             params=params,
         ):
             parsed = json.loads(raw_line)
@@ -501,7 +501,7 @@ def op_logs(api: ToolforgeClient, name: str, follow: bool, last: Optional[int]):
 
 def op_delete(api: ToolforgeClient, name: str):
     try:
-        api.delete(f"/delete/{name}")
+        api.delete(f"/jobs/{name}")
     except TjfCliHttpUserError as e:
         if e.status_code == 404:
             logging.warning(f"job '{name}' does not exist")
@@ -512,7 +512,7 @@ def op_delete(api: ToolforgeClient, name: str):
 
 
 def op_flush(api: ToolforgeClient):
-    api.delete("/flush/")
+    api.delete("/jobs/")
     logging.debug("all jobs were flushed (if any existed anyway, we didn't check)")
 
 
@@ -616,7 +616,7 @@ def op_load(api: ToolforgeClient, file: str, job_name: Optional[str]):
 
 def op_restart(api: ToolforgeClient, name: str):
     try:
-        api.post(f"/restart/{name}")
+        api.post(f"/jobs/{name}/restart")
     except TjfCliHttpUserError as e:
         if e.status_code == 404:
             raise TjfCliUserError(f"Job '{name}' does not exist") from e

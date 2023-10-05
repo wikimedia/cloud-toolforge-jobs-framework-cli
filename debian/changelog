@@ -1,3 +1,16 @@
+toolforge-jobs-framework-cli (13) buster; urgency=medium
+
+  [ Arturo Borrero Gonzalez ]
+  * [90805dc] cli: remove --cert and --key options
+
+  [ Taavi Väänänen ]
+  * [f487c01] cli: remove 'containers' option, replaced by 'images'
+  * [8d23473] cli: Increase timeout (and make it configurable)
+  * [1a4c05c] cli: Use toolforge-weld config system
+  * [dadbc94] Add support for querying logs
+
+ -- Taavi Väänänen <hi@taavi.wtf>  Thu, 05 Oct 2023 12:01:35 +0300
+
 toolforge-jobs-framework-cli (12) buster; urgency=medium
 
   [ Arturo Borrero Gonzalez ]

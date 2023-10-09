@@ -1,3 +1,10 @@
+toolforge-jobs-framework-cli (14) buster; urgency=medium
+
+  * [f9ec42b] cli: Use new more structured URL routes
+  * [0d30629] cli: run: Use JSON in POST body
+
+ -- Taavi Väänänen <hi@taavi.wtf>  Mon, 09 Oct 2023 09:51:02 +0300
+
 toolforge-jobs-framework-cli (13) buster; urgency=medium
 
   [ Arturo Borrero Gonzalez ]
